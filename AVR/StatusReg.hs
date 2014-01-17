@@ -1,5 +1,5 @@
 -- | Operations on the AVR's status register
-module AVR.Types.StatusReg where
+module AVR.StatusReg where
 
 -- | The AVR uses the following flags for many operations, such as branching and arithmetic
 data StatusReg = StatusReg {

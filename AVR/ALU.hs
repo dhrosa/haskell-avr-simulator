@@ -1,6 +1,6 @@
 module AVR.ALU where
 
-import qualified AVR.Types.StatusReg as S
+import qualified AVR.StatusReg as S
 
 import Data.Bits
 import Data.Word (Word8)
