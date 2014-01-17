@@ -22,24 +22,3 @@ data WideRegNum = W | X | Y | Z
 type Reg     = Word8
 -- | Register pairs are 16-bits wide
 type WideReg = Word16
-              
--- | Unary ALU operations
-data UnaryOpType = Complement -- ^ Flip bits
-                 | Negate     -- ^ Two's complement negation
-                 | Increment  -- ^ Increment by 1
-                 | Decrement  -- ^ Decrement by 1
-                 | Test       -- ^ Check if non-zero
-                 | Clear      -- ^ Set to zero
-                 | Set        -- ^ Set register to 0xFF
-                 deriving (Eq, Show)
-
--- | Binary ALU Operations
-data BinaryOpType = Add
-                  | AddCarry
-                  | Subtract
-                  | SubtractCarry
-                  | And
-                  | Or
-                  | Xor
-                  deriving (Show, Eq)
-                           
