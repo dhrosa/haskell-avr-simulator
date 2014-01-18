@@ -7,7 +7,7 @@ import qualified AVR.ALU as A
 main :: IO()
 main = do
   let
-    opTypes = enumFromTo A.Complement A.Set
+    opTypes = enumFrom A.Complement
     val = 0xAA
     ops = map (\t -> (t, A.alu (A.UnaryOp t val S.empty))) opTypes
   putStrLn . unlines . map show $ ops

@@ -11,6 +11,8 @@ data UnaryOpType = Complement -- ^ Flip bits
                  | Increment  -- ^ Increment by 1
                  | Decrement  -- ^ Decrement by 1
                  | Set        -- ^ Set register to 0xFF
+                 | FlagClear  -- ^ Clears the given status register bit
+                 | FlagSet    -- ^ Sets the given status register bit
                  deriving (Eq, Enum, Show)
 
 -- | Binary ALU Operations
@@ -74,4 +76,10 @@ alu (UnaryOp op a s) = case op of
                    
   Set        -> AluResult 0xFF s
                     
-  _          -> emptyResult
+  FlagClear  -> AluResult 0 (S.set s (a .&. 7) False)
+  
+  FlagSet    -> AluResult 0 (S.set s (a .&. 7) True )
+  
+  _          -> error "Unimplemented unary ALU operation encountered."
+  
+  
