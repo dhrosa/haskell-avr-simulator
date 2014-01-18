@@ -1,7 +1,8 @@
 module Main where
 
-import AVR.Types
+import qualified AVR.RegFile as R
 import qualified AVR.StatusReg as S
+import qualified AVR.Decoder as D
 import qualified AVR.ALU as A
 
 main :: IO()

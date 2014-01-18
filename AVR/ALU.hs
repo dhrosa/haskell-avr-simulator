@@ -80,7 +80,7 @@ alu (UnaryOp op a s) = case op of
   
   FlagSet    -> AluResult 0 (S.set s (a .&. 7) True )
   
-  _          -> error "Unimplemented unary ALU operation encountered."
+  --_          -> error "Unimplemented unary ALU operation encountered."
   
 alu (BinaryOp op a b s) = case op of
   Add           -> let val = a + b

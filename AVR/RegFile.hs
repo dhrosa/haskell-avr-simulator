@@ -1,4 +1,4 @@
-module AVR.Types where
+module AVR.RegFile where
 
 import Data.Word (Word8, Word16)
 
@@ -15,10 +15,27 @@ data RegNum =  R0 |  R1 |  R2 |  R3 |
 
 -- | The AVR utilizes register pairs for some instructions,
 -- | W = R25:R24, X = R27:26, Y = R29:R28, Z = R31:R30
-data WideRegNum = W | X | Y | Z
+data RegPairNum = W | X | Y | Z
                 deriving (Eq, Show)
 
 -- | Registers are 8-bits wide
 type Reg     = Word8
 -- | Register pairs are 16-bits wide
 type WideReg = Word16
+
+-- | Represents the 32 general purpose registers
+newtype RegFile = RegFile { regList :: [Reg] }
+
+-- | An regfile filled with zeros
+empty :: RegFile
+empty = RegFile (replicate 32 0)
+
+-- | Retrieves a register
+getReg :: RegNum -> RegFile -> Reg
+getReg num (RegFile regs) = regs !! (fromEnum num)
+
+-- | Sets a register
+setReg :: RegNum -> Word8 -> RegFile -> RegFile
+setReg num val (RegFile regs) = RegFile (left ++ [val] ++ right)
+  where
+    (left, _:right) = splitAt (fromEnum num) regs
