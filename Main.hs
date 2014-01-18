@@ -14,5 +14,5 @@ main = do
   let
     a = 0
     b = 1
-    op = A.BinaryOp A.AddCarry a b (S.empty {S.carry = True})
+    op = A.BinaryOp A.SubtractCarry a b (S.empty {S.carry = True})
   print (op, A.alu op)

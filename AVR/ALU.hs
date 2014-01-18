@@ -83,14 +83,23 @@ alu (UnaryOp op a s) = case op of
   _          -> error "Unimplemented unary ALU operation encountered."
   
 alu (BinaryOp op a b s) = case op of
-  Add        -> let val = a + b
-                    h = (a3 && b3) || (a3 && nbit7 val) || (nbit7 val && b3)
-                    v = (a7 && b7 && nbit7 val) || (na7 && nb7 && bit7 val)
-                    c = (a7 && b7) || (a7 && nbit7 val) || (b7 && nbit7 val)
-                in AluResult val $ (defaultUpdate s v val) {S.halfCarry = h, S.carry = c}
+  Add           -> let val = a + b
+                       h = (a3 && b3) || (a3 && nbit7 val) || (nbit7 val && b3)
+                       v = (a7 && b7 && nbit7 val) || (na7 && nb7 && bit7 val)
+                       c = (a7 && b7) || (a7 && nbit7 val) || (b7 && nbit7 val)
+                   in AluResult val $ (defaultUpdate s v val) {S.halfCarry = h, S.carry = c}
                    
-  AddCarry   -> let carryVal = if S.carry s then 1 else 0
-                in alu $ BinaryOp Add (a+carryVal) b s
+  AddCarry      -> alu $ BinaryOp Add (a+carryVal) b s
+                   
+  Subtract      -> let val = a - b
+                       h = (na3 && b3) || (b3 && bit3 val) || (na3 && bit3 val)
+                       v = (a7 && nb7 && nbit7 val) || (na7 && b7 && bit7 val)
+                       c = (na7 && b7) || (b7 && bit7 val) || (bit7 val && na7)
+                       z = if val == 0 then S.carry s else False
+                   in AluResult val $ (defaultUpdate s v val) {S.carry = c, S.halfCarry = h, S.zero = z}
+                   
+  SubtractCarry -> alu $ BinaryOp Subtract (a-carryVal) b s
+
   where
     bit3 :: Word8 -> Bool
     bit7 :: Word8 -> Bool
@@ -100,3 +109,5 @@ alu (BinaryOp op a b s) = case op of
     b3 = bit3 b; nb3 = nbit3 a
     a7 = bit7 a; na7 = nbit7 a
     b7 = bit7 b; nb7 = nbit7 b
+
+    carryVal = if S.carry s then 1 else 0
