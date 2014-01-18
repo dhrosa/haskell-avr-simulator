@@ -100,6 +100,15 @@ alu (BinaryOp op a b s) = case op of
                    
   SubtractCarry -> alu $ BinaryOp Subtract (a-carryVal) b s
 
+  And           -> let val = a .&. b
+                   in AluResult val $ (defaultUpdate s False val)
+                      
+  Or            -> let val = a .|. b
+                   in AluResult val $ (defaultUpdate s False val)
+
+  Xor           -> let val = a `xor` b
+                   in AluResult val $ (defaultUpdate s False val)
+
   where
     bit3 :: Word8 -> Bool
     bit7 :: Word8 -> Bool
