@@ -12,23 +12,46 @@ import Text.Printf (printf)
 
 type Immediate = Word8
 
-data Instruction = ADD  RegNum RegNum
-                 | ADC  RegNum RegNum
-                 | SUB  RegNum RegNum
-                 | SUBI RegNum Immediate
-                 | SBC  RegNum RegNum
-                 | SBCI RegNum Immediate
-                 | AND  RegNum RegNum
-                 | ANDI RegNum Immediate
-                 | OR   RegNum RegNum
-                 | ORI  RegNum Immediate
-                 | EOR  RegNum RegNum
-                 | COM  RegNum
-                 | NEG  RegNum
-                 | INC  RegNum
-                 | DEC  RegNum
-                 | SER  RegNum
-                 deriving (Eq, Show)
+data BitIndex = Bit0 | Bit1 | Bit2 | Bit3 | Bit4 | Bit5 | Bit6 | Bit7
+              deriving (Eq, Enum, Show)
+
+data Instruction =
+  -- Arithmetic instructions
+  ADD  RegNum RegNum
+  | ADC  RegNum RegNum
+  | SUB  RegNum RegNum
+  | SUBI RegNum Immediate
+  | SBC  RegNum RegNum
+  | SBCI RegNum Immediate
+  | AND  RegNum RegNum
+  | ANDI RegNum Immediate
+  | OR   RegNum RegNum
+  | ORI  RegNum Immediate
+  | EOR  RegNum RegNum
+  | COM  RegNum
+  | NEG  RegNum
+  | INC  RegNum
+  | DEC  RegNum
+  | SER  RegNum
+    -- Branch instructions
+  | CP   RegNum RegNum
+  | CPC  RegNum RegNum
+  | CPI  RegNum Immediate
+    -- Data transfer instructions
+  | MOV  RegNum RegNum
+  | LDI  RegNum Immediate
+    -- Bit and bit-test instructions
+  | LSR  RegNum
+  | ROR  RegNum
+  | ASR  RegNum
+  | SWAP RegNum
+  | BSET BitIndex
+  | BCLR BitIndex
+  | BST  RegNum BitIndex
+  | BLD  RegNum BitIndex
+    -- MCU Control Instructions
+  | NOP
+  deriving (Eq, Show)
 
 -- | Emulates verilog's casex syntax. Matches a 16-bit value against a mask composed of 1, 0, and?'s.
 -- | ? is a wild-card value. This function ignores any underscores in the pattern
@@ -60,6 +83,26 @@ decode i
   | i =? "1001_010?_????_0011" = INC  rd
   | i =? "1001_010?_????_1010" = DEC  rd
   | i =? "1001_010?_????_1111" = SER  rd
+                                 
+  | i =? "0001_01??_????_????" = CP   rd rr
+  | i =? "0000_01??_????_????" = CPC  rd rr
+  | i =? "0011_????_????_????" = CPI  rd_high immediate
+                                 
+  | i =? "0010_11??_????_????" = MOV  rd rr
+  | i =? "1110_????_????_????" = LDI  rd_high immediate
+                                 
+  | i =? "1001_010?_????_0110" = LSR  rd
+  | i =? "1001_010?_????_0111" = ROR  rd
+                                 
+  | i =? "1001_010?_????_0101" = ASR  rd
+  | i =? "1001_010?_????_0010" = SWAP rd
+  | i =? "1001_0100_0???_1000" = BSET s
+  | i =? "1001_0100_1???_1000" = BCLR s
+                                 
+  | i =? "1111_101?_????_0???" = BST rd bitIndex
+  | i =? "1111_100?_????_0???" = BLD rd bitIndex
+                                 
+  | i =? "0000_0000_0000_0000" = NOP
   | otherwise = error $ "Unimplemented instruction encountered while decoding: " ++ printf "0x%016x" i
   where
     bits inds = foldl (.|.) 0
@@ -71,3 +114,6 @@ decode i
     rd_high = toEnum $ (bits [8..11]) `setBit` 5
     
     immediate = bits ([0..3] ++ [8..11])
+    
+    s = toEnum $ bits [4..6]
+    bitIndex = toEnum $ bits [0..2]
