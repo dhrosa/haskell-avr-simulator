@@ -8,6 +8,8 @@ import AVR.RegFile
 import qualified AVR.StatusReg as S
 import qualified AVR.ALU as A
 
+import Text.Printf (printf)
+
 type Immediate = Word8
 
 data Instruction = ADD  RegNum RegNum
@@ -58,7 +60,7 @@ decode i
   | i =? "1001_010?_????_0011" = INC  rd
   | i =? "1001_010?_????_1010" = DEC  rd
   | i =? "1001_010?_????_1111" = SER  rd
-  | otherwise = error "Unimplemented instruction encountered while decoding."
+  | otherwise = error $ "Unimplemented instruction encountered while decoding: " ++ printf "0x%016x" i
   where
     bits inds = foldl (.|.) 0
                 $ zipWith (\val pos -> if val then bit pos else 0) (map (testBit i) inds) [0..]
@@ -66,6 +68,6 @@ decode i
     rr = toEnum $ bits [4..8]
     rd = toEnum $ bits [0,1,2,3,9]
     
-    rd_high = toEnum $ (bits [8..11]) `shiftL` 1
+    rd_high = toEnum $ (bits [8..11]) `setBit` 5
     
     immediate = bits ([0..3] ++ [8..11])

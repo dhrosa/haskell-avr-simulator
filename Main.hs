@@ -5,15 +5,19 @@ import qualified AVR.StatusReg as S
 import qualified AVR.Decoder as D
 import qualified AVR.ALU as A
 
+import qualified Data.ByteString as B
+import Data.Bits
+
+import Data.Word (Word8,  Word16)
+
+word8to16 :: [Word8] -> [Word16]
+word8to16 (a:b:rest) = comb : word8to16 rest
+  where
+    comb = ((fromIntegral b) `shiftL` 8) + (fromIntegral a)
+
+word8to16 [] = []
+
 main :: IO()
 main = do
-  let
-    opTypes = enumFrom A.Complement
-    val = 0xAA
-    ops = map (\t -> (t, A.alu (A.UnaryOp t val S.empty))) opTypes
-  putStrLn . unlines . map show $ ops
-  let
-    a = 0
-    b = 1
-    op = A.BinaryOp A.SubtractCarry a b (S.empty {S.carry = True})
-  print (op, A.alu op)
+  progmem <- B.getContents
+  print . map D.decode . word8to16 . B.unpack $ progmem
