@@ -3,8 +3,7 @@ module AVR.Decoder where
 import Data.Word (Word8, Word16)
 import Data.Bits
 
-import AVR.State
-import AVR.RegFile
+import AVR.RegFile (RegNum)
 import qualified AVR.StatusReg as S
 import qualified AVR.ALU as A
 

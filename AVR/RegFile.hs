@@ -2,6 +2,8 @@ module AVR.RegFile where
 
 import Data.Word (Word8, Word16)
 
+import Text.Printf (printf)
+
 -- | The AVR has 32 general purpose registers
 data RegNum =  R0 |  R1 |  R2 |  R3 |
                R4 |  R5 |  R6 |  R7 |
@@ -25,6 +27,11 @@ type WideReg = Word16
 
 -- | Represents the 32 general purpose registers
 newtype RegFile = RegFile { regList :: [Reg] }
+
+instance Show RegFile where
+  show (RegFile regs) = unlines $ zipWith showReg (enumFrom R0) $ regs
+    where
+      showReg num val = printf "%s: %02x" (show num) val
 
 -- | An regfile filled with zeros
 empty :: RegFile

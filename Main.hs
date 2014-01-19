@@ -1,9 +1,9 @@
 module Main where
 
-import qualified AVR.RegFile as R
-import qualified AVR.StatusReg as S
 import qualified AVR.Decoder as D
-import qualified AVR.ALU as A
+import AVR.State
+import AVR.Exec
+import AVR.RegFile
 
 import qualified Data.ByteString as B
 import Data.Bits
@@ -16,6 +16,8 @@ word8to16 (a:b:rest) = comb : word8to16 rest
     comb = ((fromIntegral b) `shiftL` 8) + (fromIntegral a)
 
 word8to16 [] = []
+
+word8to16 _ = error "input list must have even number of bytes."
 
 main :: IO()
 main = do

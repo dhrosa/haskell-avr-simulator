@@ -13,6 +13,7 @@ data UnaryOpType = Complement -- ^ Flip bits
                  | Set        -- ^ Set register to 0xFF
                  | LogicalShiftRight
                  | ArithmeticShiftRight
+                 | RotateRight
                  | Swap
                  | Identity
                  deriving (Eq, Enum, Show)
@@ -101,6 +102,13 @@ alu (UnaryOp op a s) = case op of
                               c = testBit a 0
                               v = (testBit val 7) /= c
                           in AluResult val $ (defaultUpdate s v val) {S.carry = c}
+  
+  RotateRight           -> let val = if (S.carry s)
+                                     then setBit (a `shiftR` 1) 7
+                                     else clearBit (a `shiftR` 1) 7
+                               c = testBit a 0
+                               v = (testBit val 7) /= c
+                           in AluResult val $ (defaultUpdate s v val) {S.carry = c}
   
   Swap                 -> let hi = (a `shiftR` 4) .&. 0x0F
                               lo = a .&. 0x0F
