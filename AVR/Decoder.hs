@@ -12,9 +12,6 @@ import Text.Printf (printf)
 
 type Immediate = Word8
 
-data BitIndex = Bit0 | Bit1 | Bit2 | Bit3 | Bit4 | Bit5 | Bit6 | Bit7
-              deriving (Eq, Enum, Show)
-
 data Instruction =
   -- Arithmetic instructions
   ADD  RegNum RegNum
@@ -45,10 +42,10 @@ data Instruction =
   | ROR  RegNum
   | ASR  RegNum
   | SWAP RegNum
-  | BSET BitIndex
-  | BCLR BitIndex
-  | BST  RegNum BitIndex
-  | BLD  RegNum BitIndex
+  | BSET A.BitIndex
+  | BCLR A.BitIndex
+  | BST  RegNum A.BitIndex
+  | BLD  RegNum A.BitIndex
     -- MCU Control Instructions
   | NOP
   deriving (Eq, Show)

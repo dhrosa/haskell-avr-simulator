@@ -20,7 +20,7 @@ empty :: StatusReg
 empty = StatusReg False False False False False False False False
 
 -- | Retrieves bits from the sreg at the given index
-test :: StatusReg -> Word8 -> Bool
+test :: StatusReg -> Int -> Bool
 test s 0 = carry s
 test s 1 = zero s
 test s 2 = negative s
@@ -32,7 +32,7 @@ test s 7 = interrupt s
 test _ _ = error "Bit index into sreg must be in range 0-7"
 
 -- | Sets a bit in the sreg at the given index
-set :: StatusReg -> Word8 -> Bool -> StatusReg
+set :: StatusReg -> Int -> Bool -> StatusReg
 set s 0 v = s {carry = v}
 set s 1 v = s {zero = v}
 set s 2 v = s {negative = v}

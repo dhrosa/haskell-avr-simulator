@@ -11,8 +11,10 @@ data UnaryOpType = Complement -- ^ Flip bits
                  | Increment  -- ^ Increment by 1
                  | Decrement  -- ^ Decrement by 1
                  | Set        -- ^ Set register to 0xFF
-                 | FlagClear  -- ^ Clears the given status register bit
-                 | FlagSet    -- ^ Sets the given status register bit
+                 | LogicalShiftRight
+                 | ArithmeticShiftRight
+                 | Swap
+                 | Identity
                  deriving (Eq, Enum, Show)
 
 -- | Binary ALU Operations
@@ -25,6 +27,15 @@ data BinaryOpType = Add
                   | Xor
                   deriving (Eq, Enum, Show)
                            
+data BitIndex = Bit0 | Bit1 | Bit2 | Bit3 | Bit4 | Bit5 | Bit6 | Bit7
+              deriving (Eq, Enum, Show)
+                           
+data BitOpType = FlagClear  -- ^ Clears the given status register bit
+               | FlagSet    -- ^ Sets the given status register bit
+               | StoreTransfer
+               | LoadTransfer
+               deriving (Eq, Enum, Show)
+
 data AluOp = NoOp |
              UnaryOp { unaryOpType :: UnaryOpType,
                        operand     :: Word8,
@@ -34,7 +45,12 @@ data AluOp = NoOp |
                         operandA     :: Word8,
                         operandB     :: Word8,
                         sreg         :: S.StatusReg
-                      }
+                      } |
+             BitOp {bitOpType :: BitOpType,
+                    operand   :: Word8,
+                    bitIndex  :: BitIndex,
+                    sreg      :: S.StatusReg
+                   }
            deriving (Eq, Show)
                     
 data AluResult = AluResult {
@@ -75,10 +91,23 @@ alu (UnaryOp op a s) = case op of
                 in AluResult val $ (defaultUpdate s v val)
                    
   Set        -> AluResult 0xFF s
-                    
-  FlagClear  -> AluResult 0 (S.set s (a .&. 7) False)
   
-  FlagSet    -> AluResult 0 (S.set s (a .&. 7) True )
+  LogicalShiftRight -> let val = clearBit (a `shiftR` 1) 7
+                           c = testBit a 0
+                           v = (testBit val 7) /= c
+                       in AluResult val $ (defaultUpdate s v val) {S.carry = c}
+                          
+  ArithmeticShiftRight -> let val = a `shiftR` 1
+                              c = testBit a 0
+                              v = (testBit val 7) /= c
+                          in AluResult val $ (defaultUpdate s v val) {S.carry = c}
+  
+  Swap                 -> let hi = (a `shiftR` 4) .&. 0x0F
+                              lo = a .&. 0x0F
+                              val = (lo `shiftL` 4) .|. hi
+                          in AluResult val s
+  
+  Identity              -> AluResult a s
   
   --_          -> error "Unimplemented unary ALU operation encountered."
   
@@ -115,8 +144,21 @@ alu (BinaryOp op a b s) = case op of
     bit3 x = testBit x 3; bit7 x = testBit x 7
     nbit3 = not . bit3; nbit7 = not . bit7
     a3 = bit3 a; na3 = nbit3 a
-    b3 = bit3 b; nb3 = nbit3 a
+    b3 = bit3 b;
     a7 = bit7 a; na7 = nbit7 a
     b7 = bit7 b; nb7 = nbit7 b
 
     carryVal = if S.carry s then 1 else 0
+    
+alu (BitOp op a ind s) = case op of
+  FlagClear  -> AluResult 0 (S.set s (fromEnum ind) False)
+  
+  FlagSet    -> AluResult 0 (S.set s (fromEnum ind) True )
+
+  StoreTransfer -> AluResult 0 (s {S.transfer = (testBit a (fromEnum ind))})
+
+  LoadTransfer -> let t = S.transfer s
+                      val = if t
+                            then setBit   a (fromEnum ind)
+                            else clearBit a (fromEnum ind)
+                  in AluResult val s
