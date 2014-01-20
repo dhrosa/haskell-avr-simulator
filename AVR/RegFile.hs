@@ -29,7 +29,7 @@ type WideReg = Word16
 newtype RegFile = RegFile { regList :: [Reg] }
 
 instance Show RegFile where
-  show (RegFile regs) = unlines $ zipWith showReg (enumFrom R0) $ regs
+  show (RegFile regs) = "\n" ++ (unlines $ zipWith showReg (enumFrom R0) $ regs)
     where
       showReg num val = printf "%s: %02x" (show num) val
 

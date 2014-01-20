@@ -1,8 +1,6 @@
 -- | Operations on the AVR's status register
 module AVR.StatusReg where
 
-import Data.Word (Word8)
-
 -- | The AVR uses the following flags for many operations, such as branching and arithmetic
 data StatusReg = StatusReg {
   carry :: Bool,     -- ^ Whether the previous arithmetic operation has a carry

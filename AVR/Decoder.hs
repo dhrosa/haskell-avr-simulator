@@ -4,7 +4,6 @@ import Data.Word (Word8, Word16)
 import Data.Bits
 
 import AVR.RegFile (RegNum)
-import qualified AVR.StatusReg as S
 import qualified AVR.ALU as A
 
 import Text.Printf (printf)
@@ -47,6 +46,7 @@ data Instruction =
   | BLD  RegNum A.BitIndex
     -- MCU Control Instructions
   | NOP
+  | HALT
   deriving (Eq, Show)
 
 -- | Emulates verilog's casex syntax. Matches a 16-bit value against a mask composed of 1, 0, and?'s.
@@ -99,6 +99,7 @@ decode i
   | i =? "1111_100?_????_0???" = BLD rd bitIndex
                                  
   | i =? "0000_0000_0000_0000" = NOP
+  | i =? "1111_1111_1111_1111" = HALT
   | otherwise = error $ "Unimplemented instruction encountered while decoding: " ++ printf "0x%016x" i
   where
     bits inds = foldl (.|.) 0
@@ -107,7 +108,7 @@ decode i
     rr = toEnum $ bits [4..8]
     rd = toEnum $ bits [0,1,2,3,9]
     
-    rd_high = toEnum $ (bits [8..11]) `setBit` 5
+    rd_high = toEnum $ (bits [4..7]) `setBit` 4
     
     immediate = bits ([0..3] ++ [8..11])
     

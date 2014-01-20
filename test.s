@@ -1,0 +1,3 @@
+LDI R16, 0x55
+MOV R0, R16
+COM R0
