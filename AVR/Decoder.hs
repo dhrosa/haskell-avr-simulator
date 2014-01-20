@@ -122,8 +122,8 @@ decode i
     bits inds = foldl (.|.) 0
                 $ zipWith (\val pos -> if val then bit pos else 0) (map (testBit i) inds) [0..]
     
-    rr = toEnum $ bits [4..8]
-    rd = toEnum $ bits [0,1,2,3,9]
+    rd = toEnum $ bits [4..8]
+    rr = toEnum $ bits [0,1,2,3,9]
     
     rd_high = toEnum $ (bits [4..7]) `setBit` 4
     
