@@ -9,7 +9,7 @@ import qualified AVR.ALU as A
 import Text.Printf (printf)
 
 type Immediate = Word8
-type WideImmediate = Word16
+type Offset = Word16
 
 data Instruction =
   -- Arithmetic instructions
@@ -30,15 +30,15 @@ data Instruction =
   | DEC  RegNum
   | SER  RegNum
     -- Branch instructions
-  | RJMP WideImmediate
+  | RJMP Offset
   | CPSE RegNum RegNum
   | CP   RegNum RegNum
   | CPC  RegNum RegNum
   | CPI  RegNum Immediate
   | SBRC RegNum A.BitIndex
   | SBRS RegNum A.BitIndex
-  | BRBS A.BitIndex Immediate
-  | BRBC A.BitIndex Immediate
+  | BRBS A.BitIndex Offset
+  | BRBC A.BitIndex Offset
     -- Data transfer instructions
   | MOV  RegNum RegNum
   | LDI  RegNum Immediate
@@ -91,15 +91,15 @@ decode i
   | i =? "1001_010?_????_1010" = DEC  rd
   | i =? "1001_010?_????_1111" = SER  rd
                                  
-  | i =? "1100_????_????_????" = RJMP wideImmediate
+  | i =? "1100_????_????_????" = RJMP offset12
   | i =? "0001_00??_????_????" = CPSE rd rr
   | i =? "0001_01??_????_????" = CP   rd rr
   | i =? "0000_01??_????_????" = CPC  rd rr
   | i =? "0011_????_????_????" = CPI  rd_high immediate
   | i =? "1111_110?_????_0???" = SBRC rd bitIndex
   | i =? "1111_111?_????_0???" = SBRS rd bitIndex
-  | i =? "1111_00??_????_????" = BRBS bitIndex immediate
-  | i =? "1111_01??_????_????" = BRBC bitIndex immediate
+  | i =? "1111_00??_????_????" = BRBS bitIndex offset7
+  | i =? "1111_01??_????_????" = BRBC bitIndex offset7
                                  
   | i =? "0010_11??_????_????" = MOV  rd rr
   | i =? "1110_????_????_????" = LDI  rd_high immediate
@@ -132,4 +132,15 @@ decode i
     s = toEnum $ bits [4..6]
     bitIndex = toEnum $ bits [0..2]
 
-    wideImmediate = bits [0..11]
+    signExtend12 x = if testBit x 11
+                     then x .|. 0xF000
+                     else x
+
+    signExtend7  x = if testBit x 6
+                     then x .|. 0xFF80
+                     else x
+
+    offset7  = signExtend7 (bits [3..9])
+
+    -- Sign extended 12-bit constant
+    offset12 = signExtend12 (bits [0..11])
