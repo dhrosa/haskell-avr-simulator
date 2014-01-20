@@ -24,6 +24,7 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s}
                  else s
     
     (aluOp, dest, writeRf, updateSreg, nextPC) = case inst of
+      -- Arithmetic operations
       ADD  ra rb  -> (A.BinaryOp A.Add (reg ra) (reg rb) s
                       , ra, True, True, pc + 1)
                      
@@ -72,6 +73,10 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s}
       SER  ra     -> (A.UnaryOp A.Set (reg ra) s
                       , ra, True, True, pc + 1)
                      
+      -- Branch instructions
+      RJMP offset -> (A.NoOp
+                      , undefined, False, False, pc + offset)
+      
       CP   ra rb  -> (A.BinaryOp A.Subtract (reg ra) (reg rb) s
                       , undefined, False, True, pc + 1)
                      
@@ -81,12 +86,16 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s}
       CPI  ra imm -> (A.BinaryOp A.SubtractCarry (reg ra) imm s
                       , undefined, False, True, pc + 1)
                      
+      -- Data Transfer
+                     
       MOV  ra rb  -> (A.UnaryOp A.Identity (reg rb) s
                       , ra, True, False, pc + 1)
                      
       LDI  ra imm -> (A.UnaryOp A.Identity imm s
                       , ra, True, False, pc + 1)
                      
+      -- Bit Ops
+      
       LSR  ra     -> (A.UnaryOp A.LogicalShiftRight (reg ra) s
                       , ra, True, True, pc + 1)
                      
@@ -110,6 +119,8 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s}
                      
       BLD  ra ind -> (A.BitOp A.LoadTransfer (reg ra) ind s
                       , ra, True, False, pc + 1)
+                     
+      -- MCU Control
                      
       NOP         -> (A.NoOp, undefined, False, False, pc + 1)
                      
