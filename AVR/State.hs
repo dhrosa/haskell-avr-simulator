@@ -13,6 +13,8 @@ data State = State {
   regFile :: R.RegFile,
   sreg    :: S.StatusReg,
   programMemory :: ProgramMemory,
+  skipInstruction :: Bool,
+  cycles :: Integer,
   halted :: Bool
   } deriving (Show)
              
@@ -22,5 +24,7 @@ initialState pmem = State {
   regFile = R.empty,
   sreg = S.empty,
   programMemory = pmem,
+  skipInstruction = False,
+  cycles = 0,
   halted = False
   }
