@@ -5,7 +5,10 @@ import AVR.Decoder
 import qualified AVR.RegFile as R
 import qualified AVR.ALU as A
 
+import qualified AVR.StatusReg as S
+
 import Data.Word (Word16)
+import Data.Bits
 
 data PCUpdate = PCStall
               | PCNext
@@ -24,12 +27,12 @@ data SRegUpdate = NoSRegUpdate
 newtype Cycles = Cycles { getCycles :: Integer }
 
 exec :: Instruction -> State -> State
-exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles}
+exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
   = state { programCounter = nextPC,
             regFile = newRegFile,
             sreg = newSreg,
             halted = inst == HALT,
-            skipInstruction = pcUpdate == PCSkip,
+            skipInstruction = skipNext,
             cycles = oldCycles + getCycles cyclesInc
           }
   where
@@ -37,19 +40,25 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles}
     
     (A.AluResult aluOutput aluSreg) = A.alu aluOp
     
-    newRegFile = case rfUpdate of
-      NoRegFileUpdate -> rf
-      RegFileUpdate dest -> R.setReg dest aluOutput rf
+    newRegFile = if skip then rf
+                 else case rfUpdate of
+                   NoRegFileUpdate -> rf
+                   RegFileUpdate dest -> R.setReg dest aluOutput rf
       
-    newSreg    = case sregUpdate of
-      NoSRegUpdate -> s
-      SRegUpdate   -> aluSreg
+    newSreg    = if skip then s
+                 else case sregUpdate of
+                   NoSRegUpdate -> s
+                   SRegUpdate   -> aluSreg
     
-    nextPC     = case pcUpdate of
-      PCStall    -> pc
-      PCNext     -> pc + 1
-      PCSkip     -> pc + 1
-      PCOffset k -> pc + k + 1
+    nextPC     = if skip then (pc + 1)
+                 else case pcUpdate of
+                   PCStall    -> pc
+                   PCNext     -> pc + 1
+                   PCSkip     -> pc + 1
+                   PCOffset k -> pc + k + 1
+                   
+    skipNext = if skip then False
+               else (pcUpdate == PCSkip)
     
     (aluOp, rfUpdate, sregUpdate, pcUpdate, cyclesInc) = case inst of
       -- Arithmetic operations
@@ -156,6 +165,13 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles}
                        PCOffset k,
                        Cycles 2)
       
+      CPSE ra rb  -> let equal = (reg ra) == (reg rb)
+                     in (A.NoOp,
+                         NoRegFileUpdate,
+                         NoSRegUpdate,
+                         if equal then PCSkip else PCNext,
+                         Cycles 1)
+      
       CP   ra rb  -> (A.BinaryOp A.Subtract (reg ra) (reg rb) s,
                       NoRegFileUpdate,
                       SRegUpdate,
@@ -174,6 +190,34 @@ exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles}
                       PCNext,
                       Cycles 1)
                      
+      SBRC ra ind -> let cleared = testBit (reg ra) (fromEnum ind) == False
+                     in (A.NoOp,
+                         NoRegFileUpdate,
+                         NoSRegUpdate,
+                         if cleared then PCSkip else PCNext,
+                         Cycles 1)
+                        
+      SBRS ra ind -> let set = testBit (reg ra) (fromEnum ind)
+                     in (A.NoOp,
+                         NoRegFileUpdate,
+                         NoSRegUpdate,
+                         if set then PCSkip else PCNext,
+                         Cycles 1)
+      
+      BRBS ind k  -> let set = S.test s (fromEnum ind)
+                     in (A.NoOp,
+                         NoRegFileUpdate,
+                         NoSRegUpdate,
+                         if set then PCOffset (fromIntegral k) else PCNext,
+                         Cycles 1)
+                        
+      BRBC ind k  -> let cleared = S.test s (fromEnum ind) == False
+                     in (A.NoOp,
+                         NoRegFileUpdate,
+                         NoSRegUpdate,
+                         if cleared then PCOffset (fromIntegral k) else PCNext,
+                         Cycles 1)
+      
       -- Data Transfer
                      
       MOV  ra rb  -> (A.UnaryOp A.Identity (reg rb) s,

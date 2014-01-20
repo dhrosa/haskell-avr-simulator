@@ -1,3 +1,9 @@
-LDI R16, 0x55
-MOV R0, R16
-COM R0
+LDI R16, 0xF8
+
+loop:
+        INC R16
+        BREQ end
+        RJMP loop
+
+end:
+        ORI R31, 0x01
