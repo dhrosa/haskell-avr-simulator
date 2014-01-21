@@ -49,6 +49,6 @@ executable avrsim
   other-modules:       AVR.RegFile, AVR.StatusReg, AVR.State, AVR.Fetch, AVR.Decoder, AVR.ALU, AVR.Exec
   
   -- Other library packages from which modules are imported.
-  build-depends:       base ==4.6.*, process==1.2.*, bytestring
+  build-depends:       base ==4.6.*, process==1.2.*, bytestring, readline
   
   ghc-options:         -Wall -fno-warn-overlapping-patterns
