@@ -22,6 +22,16 @@ word8to16 (a:b:rest) = comb : word8to16 rest
 word8to16 [] = []
 word8to16 _ = error "input list must have even number of bytes."
 
+type Zipper a = ([a], [a])
+
+forward :: Zipper a -> Zipper a
+forward ([], bs) =  ([], bs)
+forward (a:as, bs) = (as, a:bs)
+
+back ::  Zipper a -> Zipper a
+back (as, b:bs) = (b:as, bs) 
+back (as, []) = (as, [])
+
 -- | Executes one simulation step
 -- | The return value is a tuple of the instruction executed, and the next state
 step :: State -> (Instruction, State)
@@ -31,7 +41,7 @@ step state = let inst = decode (fetch state)
 -- | Takes an initial processor state and simulates it until the processor halts.
 stepUntilDone :: State -> [(Instruction, State)]
 stepUntilDone initial
-  = takeWhile (not . halted . snd) $ iterate (step . snd) (NOP, initial)
+  = tail $ takeWhile (not . halted . snd) $ iterate (step . snd) (NOP, initial)
     
 -- | Takes an assembler source frmo stdin and simulates it.
 main :: IO()
@@ -44,4 +54,5 @@ main = do
   _ <- system "avr-objcopy -S -O binary temp.elf temp.bin"
   pmem <- liftM (word8to16 . B.unpack) (B.readFile "temp.bin")
   _ <- system "rm -f temp.s temp.a temp.elf temp.bin"
-  print $ stepUntilDone (initialState pmem)
+
+  print $  stepUntilDone (initialState pmem)

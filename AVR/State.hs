@@ -9,6 +9,7 @@ type ProgramCounter = Word16
 type ProgramMemory = [Word16]
 
 data State = State {
+  oldProgramCounter :: ProgramCounter,
   programCounter :: ProgramCounter,
   regFile :: R.RegFile,
   sreg    :: S.StatusReg,
@@ -20,6 +21,7 @@ data State = State {
              
 initialState :: ProgramMemory -> State
 initialState pmem = State {
+  oldProgramCounter = 0,
   programCounter = 0,
   regFile = R.empty,
   sreg = S.empty,

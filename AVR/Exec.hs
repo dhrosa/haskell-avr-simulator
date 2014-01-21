@@ -28,7 +28,8 @@ newtype Cycles = Cycles { getCycles :: Integer }
 
 exec :: Instruction -> State -> State
 exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
-  = state { programCounter = nextPC,
+  = state { oldProgramCounter = pc,
+            programCounter = nextPC,
             regFile = newRegFile,
             sreg = newSreg,
             halted = inst == HALT,
