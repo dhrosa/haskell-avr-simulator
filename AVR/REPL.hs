@@ -4,7 +4,7 @@ import AVR.Decoder (decode, Instruction (NOP))
 import AVR.Fetch (fetch)
 import AVR.Exec (exec)
 import AVR.RegFile (prettyRegFile)
-import AVR.State
+import AVR.AVRState
 
 import Data.Word (Word16)
 
@@ -38,17 +38,17 @@ current _  = error "Cannot take current value of empty zipper."
 
 -- | Executes one simulation step
 -- | The return value is a tuple of the instruction executed, and the next state
-step :: State -> (Instruction, State)
+step :: AVRState -> (Instruction, AVRState)
 step state = let inst = decode (fetch state)
              in (inst, exec inst state)
 
 -- | Takes an initial processor state and simulates it until the processor halts.
-stepUntilDone :: State -> [(Instruction, State)]
+stepUntilDone :: AVRState -> [(Instruction, AVRState)]
 stepUntilDone initial
   = tail $ takeWhile (not . halted . snd) $ iterate (step . snd) (NOP, initial)
 
 -- | REPL (read-evaluate-print-loop) for simulator
-simulate :: Zipper (Instruction, State) -> IO (Zipper (Instruction, State))
+simulate :: Zipper (Instruction, AVRState) -> IO (Zipper (Instruction, AVRState))
 simulate steps = do
   let (inst, state) = current steps
       again = (simulate steps)

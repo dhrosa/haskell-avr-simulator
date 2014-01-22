@@ -1,6 +1,6 @@
 module AVR.Exec where
 
-import AVR.State
+import AVR.AVRState
 import AVR.Decoder
 import qualified AVR.RegFile as R
 import qualified AVR.ALU as A
@@ -26,8 +26,8 @@ data SRegUpdate = NoSRegUpdate
 
 newtype Cycles = Cycles { getCycles :: Integer }
 
-exec :: Instruction -> State -> State
-exec inst state@State{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
+exec :: Instruction -> AVRState -> AVRState
+exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
   = state { oldProgramCounter = pc,
             programCounter = nextPC,
             regFile = newRegFile,

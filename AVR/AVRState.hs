@@ -1,4 +1,4 @@
-module AVR.State where
+module AVR.AVRState where
 
 import qualified AVR.RegFile as R
 import qualified AVR.StatusReg as S
@@ -8,7 +8,7 @@ import Data.Word (Word16)
 type ProgramCounter = Word16
 type ProgramMemory = [Word16]
 
-data State = State {
+data AVRState = AVRState {
   oldProgramCounter :: ProgramCounter,
   programCounter :: ProgramCounter,
   regFile :: R.RegFile,
@@ -19,8 +19,8 @@ data State = State {
   halted :: Bool
   } deriving (Show)
              
-initialState :: ProgramMemory -> State
-initialState pmem = State {
+initialState :: ProgramMemory -> AVRState
+initialState pmem = AVRState {
   oldProgramCounter = 0,
   programCounter = 0,
   regFile = R.empty,
