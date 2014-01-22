@@ -3,6 +3,7 @@ module Main where
 import AVR.Decoder (decode, Instruction (NOP))
 import AVR.Fetch (fetch)
 import AVR.Exec (exec)
+import AVR.RegFile (prettyRegFile)
 
 import AVR.State
 
@@ -71,7 +72,7 @@ simulate steps = do
     Nothing -> exitSuccess
     Just command -> 
       case command of 
-        "regs" -> addHistory command >> print (regFile state) >> again
+        "regs" -> addHistory command >> putStrLn (prettyRegFile (regFile state) ++ show (sreg state))  >> again
       
         "back" -> case (back steps) of
           Nothing   -> (putStrLn "Cannot backtrack any further.") >> again
@@ -96,8 +97,6 @@ main = do
   _ <- system "avr-objcopy -S -O binary temp.elf temp.bin"
   pmem <- liftM (word8to16 . B.unpack) (B.readFile "temp.bin")
   _ <- system "rm -f temp.s temp.a temp.elf temp.bin"
-
-  --hSetBuffering stdout NoBuffering
 
   _ <- simulate $ toZipper $ stepUntilDone (initialState pmem)
   return ()

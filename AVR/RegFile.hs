@@ -4,6 +4,9 @@ import Data.Word (Word8, Word16)
 
 import Text.Printf (printf)
 
+import Data.List (transpose, intercalate)
+import Data.List.Split (chunksOf)
+
 -- | The AVR has 32 general purpose registers
 data RegNum =  R0 |  R1 |  R2 |  R3 |
                R4 |  R5 |  R6 |  R7 |
@@ -29,9 +32,7 @@ type WideReg = Word16
 newtype RegFile = RegFile { regList :: [Reg] }
 
 instance Show RegFile where
-  show (RegFile regs) = "\n" ++ (unlines $ zipWith showReg (enumFrom R0) $ regs)
-    where
-      showReg num val = printf "%s: %02x" (show num) val
+  show = prettyRegFile
 
 -- | An regfile filled with zeros
 empty :: RegFile
@@ -46,3 +47,9 @@ setReg :: RegNum -> Word8 -> RegFile -> RegFile
 setReg num val (RegFile regs) = RegFile (left ++ [val] ++ right)
   where
     (left, _:right) = splitAt (fromEnum num) regs
+    
+prettyRegFile :: RegFile -> String
+prettyRegFile rf = unlines . map (intercalate " | " . map showReg) $ rows
+  where
+    rows = transpose . chunksOf 8 . enumFrom $ R0
+    showReg num = printf "R%02d: %02X" (fromEnum num) (getReg num rf)
