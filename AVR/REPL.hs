@@ -6,18 +6,39 @@ import AVR.Exec (exec)
 import AVR.RegFile (prettyRegFile)
 import AVR.AVRState
 
+import Data.Char (toLower)
+import Data.List (inits)
 import Data.Word (Word16)
 
 import System.Console.Readline
 import System.Exit
 import Text.Printf (printf)
+import Text.ParserCombinators.Parsec
 
 data Command = Regs
-             | Dissassemble
+             | Disassemble
              | Back
              | Step
              | Quit
              deriving (Eq, Show)
+
+keywords :: [String] -> Parser String 
+keywords = choice . map (try . string)
+
+-- | Makes a simple parse that matches the name of a command, or any of its prefixes
+parseSimple :: Command -> Parser Command
+parseSimple command = keywords (reverse $ tail $ inits phrase) >> eof >> return command
+                      <?> phrase ++ " command"
+  where phrase = map toLower $ show $ command
+
+parseCommand :: Parser Command
+parseCommand = choice . map try $ [
+  parseSimple Regs,
+  parseSimple Disassemble,
+  parseSimple Back,
+  parseSimple Step,
+  parseSimple Quit
+  ]
 
 type Zipper a = ([a], [a])
 
@@ -67,24 +88,25 @@ simulate steps = do
   
   case line of
     Nothing -> exitSuccess
-    Just command -> 
-      case command of 
-        "regs" -> addHistory command >> putStrLn (prettyRegFile (regFile state) ++ show (sreg state))  >> again
+    Just commandStr -> 
+      case parse parseCommand "(unknown)" commandStr of 
+        Left err -> print err >> again
+        Right command -> addHistory commandStr >> (
+          case command of 
+            Regs -> putStrLn (prettyRegFile (regFile state) ++ show (sreg state))  >> again
       
-        "dis"  -> addHistory command >> putStrLn disassemble >> again
+            Disassemble -> putStrLn disassemble >> again
       
-        "back" -> case (back steps) of
-          Nothing   -> (putStrLn "Cannot backtrack any further.") >> again
-          Just prev -> addHistory command >> simulate prev
+            Back -> case (back steps) of
+              Nothing   -> putStrLn "Cannot backtrack any further." >> again
+              Just prev -> simulate prev
         
-        "step" -> case (forward steps) of
-          Nothing -> (putStrLn "Cannot step any further.") >> again
-          Just next -> addHistory command >> simulate next
+            Step -> case (forward steps) of
+              Nothing -> putStrLn "Cannot step any further." >> again
+              Just next -> simulate next
       
-        "quit" -> exitSuccess
-
-        _      -> (putStrLn "Unrecognized command.") >> again
-
+            Quit -> putStrLn "Exiting." >> exitSuccess
+          )
 
 repl :: ProgramMemory -> IO()
 repl pmem = (simulate . toZipper . stepUntilDone . initialState $ pmem) >> return ()
