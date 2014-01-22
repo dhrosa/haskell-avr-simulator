@@ -61,6 +61,12 @@ simulate :: Zipper (Instruction, State) -> IO (Zipper (Instruction, State))
 simulate steps = do
   let (inst, state) = current steps
       again = (simulate steps)
+      disassemble = unlines $ zipWith disLine [0..] (programMemory state)
+      disLine :: Int -> Word16 -> String
+      disLine i word = let marker = if (fromIntegral i == oldProgramCounter state)
+                                    then "> "
+                                    else "  "
+                       in printf "%s%04X: %s" marker i (show . decode $ word)
   
   putStrLn ""
   putStrLn $ printf "PC = 0x%04X" (oldProgramCounter state)
@@ -73,6 +79,8 @@ simulate steps = do
     Just command -> 
       case command of 
         "regs" -> addHistory command >> putStrLn (prettyRegFile (regFile state) ++ show (sreg state))  >> again
+      
+        "dis"  -> addHistory command >> putStrLn disassemble >> again
       
         "back" -> case (back steps) of
           Nothing   -> (putStrLn "Cannot backtrack any further.") >> again
