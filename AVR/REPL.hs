@@ -47,9 +47,6 @@ stepUntilDone :: State -> [(Instruction, State)]
 stepUntilDone initial
   = tail $ takeWhile (not . halted . snd) $ iterate (step . snd) (NOP, initial)
 
-repl :: ProgramMemory -> IO()
-repl pmem = (simulate . toZipper . stepUntilDone . initialState $ pmem) >> return ()
-
 -- | REPL (read-evaluate-print-loop) for simulator
 simulate :: Zipper (Instruction, State) -> IO (Zipper (Instruction, State))
 simulate steps = do
@@ -88,3 +85,6 @@ simulate steps = do
 
         _      -> (putStrLn "Unrecognized command.") >> again
 
+
+repl :: ProgramMemory -> IO()
+repl pmem = (simulate . toZipper . stepUntilDone . initialState $ pmem) >> return ()
