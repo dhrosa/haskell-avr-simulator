@@ -9,6 +9,9 @@ import AVR.AVRState
 import Data.Char (toLower)
 import Data.List (inits)
 import Data.Word (Word16)
+import Numeric (readHex)
+
+import Control.Monad
 
 import System.Console.Readline
 import System.Exit
@@ -20,6 +23,7 @@ data Command = Regs
              | Back
              | Step
              | Quit
+             | PMem Int Int
              deriving (Eq, Show)
 
 keywords :: [String] -> Parser String 
@@ -31,13 +35,24 @@ parseSimple command = keywords (reverse $ tail $ inits phrase) >> eof >> return 
                       <?> phrase ++ " command"
   where phrase = map toLower $ show $ command
 
+parsePMem :: Parser Command
+parsePMem = do
+  _ <- keywords (reverse $ tail $ inits "pmem")
+  _ <- many1 space
+  start <- liftM (fst . head . readHex) (many hexDigit)
+  _ <- many1 space
+  end <- liftM (fst . head . readHex) (many hexDigit)
+  return (PMem start end)
+  
+
 parseCommand :: Parser Command
 parseCommand = choice . map try $ [
   parseSimple Regs,
   parseSimple Disassemble,
   parseSimple Back,
   parseSimple Step,
-  parseSimple Quit
+  parseSimple Quit,
+  parsePMem
   ]
 
 type Zipper a = ([a], [a])
@@ -79,6 +94,9 @@ simulate steps = do
                                     then "> "
                                     else "  "
                        in printf "%s%04X: %s" marker i (show . decode $ word)
+                          
+      printPMem start end = unlines $ map pMemLine [start..end]
+      pMemLine i = printf "%04X: %04X" i $ programMemory state !! i
   
   putStrLn ""
   putStrLn $ printf "PC = 0x%04X" (oldProgramCounter state)
@@ -106,6 +124,8 @@ simulate steps = do
               Just next -> simulate next
       
             Quit -> putStrLn "Exiting." >> exitSuccess
+            
+            PMem start end -> putStrLn (printPMem start end) >> again
           )
 
 repl :: ProgramMemory -> IO()
