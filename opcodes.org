@@ -1,0 +1,105 @@
+* Implemented opcodes [0/5]
+  - [-] Arithmetic and Logic [15/24]
+    - [X] ADD
+    - [X] ADC
+    - [ ] ADIW
+    - [X] SUB
+    - [X] SUBI
+    - [X] SBC
+    - [X] SBCI
+    - [ ] SBIW
+    - [X] AND
+    - [X] ANDI
+    - [X] OR
+    - [X] ORI
+    - [X] EOR
+    - [X] COM
+    - [X] NEG
+    - [X] INC
+    - [X] DEC
+    - [ ] MUL
+    - [ ] MULS
+    - [ ] MULSU
+    - [ ] FMUL
+    - [ ] FMULS
+    - [ ] FMULSU
+    - [ ] DES
+  - [-] Branch [12/19]
+    - [X] RJMP
+    - [X] IJMP
+    - [ ] EIJMP
+    - [ ] RCALL
+    - [ ] ICALL
+    - [ ] EICALL
+    - [ ] CALL
+    - [ ] RET
+    - [ ] RETI
+    - [X] CPSE
+    - [X] CP
+    - [X] CPC
+    - [X] CPI
+    - [X] SBRC
+    - [X] SBRS
+    - [X] SBIC
+    - [X] SBIS
+    - [X] BRBS
+    - [X] BRBC
+  - [-] Data Transfer [2/42]
+    - [X] MOV
+    - [ ] MOVW
+    - [X] LDI
+    - [ ] LDS
+    - [ ] LD Rd, X
+    - [ ] LD Rd, X+
+    - [ ] LD Rd, -X
+    - [ ] LD Rd, Y
+    - [ ] LD Rd, Y+
+    - [ ] LD Rd, -Y
+    - [ ] LDD Rd, Y+q
+    - [ ] LD Rd, Z
+    - [ ] LD Rd, Z+
+    - [ ] LD Rd, -Z
+    - [ ] LDD, Z+q
+    - [ ] STS
+    - [ ] ST X, Rr
+    - [ ] ST X+, Rr
+    - [ ] ST -X, Rr
+    - [ ] ST Y, Rr
+    - [ ] ST Y+, Rr
+    - [ ] ST -Y, Rr
+    - [ ] STD Y+q, Rr
+    - [ ] ST Z, Rr
+    - [ ] ST Z+, Rr
+    - [ ] STD Z+q, Rr
+    - [ ] LPM
+    - [ ] LPM Rd, Z
+    - [ ] LPM Rd, Z+
+    - [ ] ELPM
+    - [ ] ELPM Rd, Z
+    - [ ] ELPM Rd, Z+
+    - [ ] SPM
+    - [ ] SPM Z+
+    - [ ] IN
+    - [ ] OUT
+    - [ ] PUSH
+    - [ ] POP
+    - [ ] XCH
+    - [ ] LAS
+    - [ ] LAC
+    - [ ] LAT
+  - [-] Bit and Bit-test [8/10]
+    - [X] LSR
+    - [X] ROR
+    - [X] ASR
+    - [X] SWAP
+    - [X] BSET
+    - [X] BCLR
+    - [ ] SBI
+    - [ ] CBI
+    - [X] BST
+    - [X] BLD
+  - [-] MCU Control Instructions [1/4]
+    - [ ] BREAK
+    - [X] NOP
+    - [ ] SLEEP
+    - [ ] WDR
