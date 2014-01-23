@@ -10,6 +10,8 @@ import Data.Char (toLower)
 import Data.List (inits)
 import Data.Word (Word16)
 import Numeric (readHex)
+import Data.Vector ((!))
+import qualified Data.Vector as V
 
 import Control.Monad
 
@@ -88,7 +90,8 @@ simulate :: Zipper (Instruction, AVRState) -> IO (Zipper (Instruction, AVRState)
 simulate steps = do
   let (inst, state) = current steps
       again = (simulate steps)
-      disassemble = unlines $ zipWith disLine [0..] (programMemory state)
+      pmem = programMemory state
+      disassemble = unlines $ V.toList $ V.imap disLine pmem
       disLine :: Int -> Word16 -> String
       disLine i word = let marker = if (fromIntegral i == oldProgramCounter state)
                                     then "> "
@@ -96,7 +99,7 @@ simulate steps = do
                        in printf "%s%04X: %s" marker i (show . decode $ word)
                           
       printPMem start end = unlines $ map pMemLine [start..end]
-      pMemLine i = printf "%04X: %04X" i $ programMemory state !! i
+      pMemLine i = printf "%04X: %04X" i $ programMemory state ! i
   
   putStrLn ""
   putStrLn $ printf "PC = 0x%04X" (oldProgramCounter state)

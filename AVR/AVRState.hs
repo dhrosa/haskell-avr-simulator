@@ -3,10 +3,12 @@ module AVR.AVRState where
 import qualified AVR.RegFile as R
 import qualified AVR.StatusReg as S
 
+import Data.Vector (Vector)
+
 import Data.Word (Word16)
 
 type ProgramCounter = Word16
-type ProgramMemory = [Word16]
+type ProgramMemory = Vector Word16
 
 data AVRState = AVRState {
   oldProgramCounter :: ProgramCounter,

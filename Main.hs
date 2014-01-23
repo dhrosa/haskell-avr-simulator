@@ -3,6 +3,7 @@ module Main where
 import qualified Data.ByteString as B
 import Data.Bits
 import Data.Word (Word8,  Word16)
+import qualified  Data.Vector as V
 
 import Control.Monad
 
@@ -28,7 +29,7 @@ main = do
   _ <- system "avr-as -mmcu=avr1 temp.s -o temp.a"
   _ <- system "avr-ld -mavr1 -Tlinker.x -o temp.elf temp.a"
   _ <- system "avr-objcopy -S -O binary temp.elf temp.bin"
-  pmem <- liftM (word8to16 . B.unpack) (B.readFile "temp.bin")
+  pmem <- liftM (V.fromList . word8to16 . B.unpack) (B.readFile "temp.bin")
   _ <- system "rm -f temp.s temp.a temp.elf temp.bin"
 
   repl pmem
