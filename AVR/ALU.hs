@@ -3,7 +3,7 @@ module AVR.ALU where
 import qualified AVR.StatusReg as S
 
 import Data.Bits
-import Data.Word (Word8)
+import Data.Word (Word8, Word16)
 
 -- | Unary ALU operations
 data UnaryOpType = Complement -- ^ Flip bits
@@ -28,6 +28,10 @@ data BinaryOpType = Add
                   | Xor
                   deriving (Eq, Enum, Show)
                            
+data WideOpType = AddWide
+                | SubtractWide
+                  deriving (Eq, Enum, Show)
+
 data BitIndex = Bit0 | Bit1 | Bit2 | Bit3 | Bit4 | Bit5 | Bit6 | Bit7
               deriving (Eq, Enum, Show)
                            
@@ -51,13 +55,22 @@ data AluOp = NoOp |
                     operand   :: Word8,
                     bitIndex  :: BitIndex,
                     sreg      :: S.StatusReg
-                   }
+                   } |
+             WideOp {wideOpType :: WideOpType,
+                     wideOperandA :: Word16,
+                     wideOperandB :: Word16,
+                     sreg :: S.StatusReg
+                    }
            deriving (Eq, Show)
                     
 data AluResult = AluResult {
   output :: Word8,
   newSreg   :: S.StatusReg
-  } deriving (Eq, Show)
+  } | WideAluResult {
+  wideOutput :: Word16,
+  newSreg :: S.StatusReg
+  }
+               deriving (Eq, Show)
                     
 emptyResult :: AluResult
 emptyResult = AluResult 0 S.empty
@@ -170,3 +183,29 @@ alu (BitOp op a ind s) = case op of
                             then setBit   a (fromEnum ind)
                             else clearBit a (fromEnum ind)
                   in AluResult val s
+                     
+                     
+alu (WideOp op a b s) = case op of
+  AddWide -> let val = a + b
+                 v = not (testBit a 15) && (testBit val 15)
+                 n = testBit val 15
+                 sign = n /= v
+                 z = val == 0
+                 c = not (testBit val 15) && (testBit a 15)
+             in WideAluResult val (s {S.overflow = v,
+                                      S.negative = n,
+                                      S.sign = sign,
+                                      S.zero = z,
+                                      S.carry = c})
+                
+  SubtractWide -> let val = a - b
+                      v = (testBit a 15) && not (testBit val 15)
+                      n = testBit val 15
+                      sign = n /= v
+                      z = val == 0
+                      c = (testBit val 15) && not (testBit a 15)
+                  in WideAluResult val (s {S.overflow = v,
+                                           S.negative = n,
+                                           S.sign = sign,
+                                           S.zero = z,
+                                           S.carry = c})

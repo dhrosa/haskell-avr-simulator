@@ -4,6 +4,7 @@ import Data.Word (Word8, Word16)
 
 import Text.Printf (printf)
 
+import Data.Bits (shiftL, shiftR, (.&.))
 import Data.List (transpose, intercalate)
 import Data.List.Split (chunksOf)
 
@@ -20,7 +21,7 @@ data RegNum =  R0 |  R1 |  R2 |  R3 |
 
 -- | The AVR utilizes register pairs for some instructions,
 -- | W = R25:R24, X = R27:26, Y = R29:R28, Z = R31:R30
-data RegPairNum = W | X | Y | Z
+data WideRegNum = W | X | Y | Z
                 deriving (Eq, Show)
 
 -- | Registers are 8-bits wide
@@ -34,6 +35,12 @@ newtype RegFile = RegFile { regList :: [Reg] }
 instance Show RegFile where
   show = prettyRegFile
 
+regPair :: WideRegNum -> [RegNum]
+regPair W = [R25, R24]
+regPair X = [R27, R26]
+regPair Y = [R29, R28]
+regPair Z = [R31, R30]
+
 -- | An regfile filled with zeros
 empty :: RegFile
 empty = RegFile (replicate 32 0)
@@ -42,11 +49,23 @@ empty = RegFile (replicate 32 0)
 getReg :: RegNum -> RegFile -> Reg
 getReg num (RegFile regs) = regs !! (fromEnum num)
 
+getWideReg :: WideRegNum -> RegFile -> WideReg
+getWideReg num rf = (rh `shiftL` 8) + rl
+  where
+    [rh, rl] = map (fromIntegral . flip getReg rf) (regPair num)
+
 -- | Sets a register
 setReg :: RegNum -> Word8 -> RegFile -> RegFile
 setReg num val (RegFile regs) = RegFile (left ++ [val] ++ right)
   where
     (left, _:right) = splitAt (fromEnum num) regs
+    
+setWideReg :: WideRegNum -> Word16 -> RegFile -> RegFile
+setWideReg num val rf = setReg rh high $ setReg rl low rf
+  where
+    [rh, rl] = regPair num
+    low = fromIntegral (val .&. 0x00FF)
+    high = fromIntegral (val `shiftR` 8)
     
 prettyRegFile :: RegFile -> String
 prettyRegFile rf = unlines . map (intercalate " | " . map showReg) $ rows
