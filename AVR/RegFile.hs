@@ -22,7 +22,7 @@ data RegNum =  R0 |  R1 |  R2 |  R3 |
 -- | The AVR utilizes the following register pairs for addressing
 -- | W = R25:R24, X = R27:26, Y = R29:R28, Z = R31:R30
 data AddressRegNum = W | X | Y | Z
-                 deriving (Eq, Show)
+                 deriving (Eq, Enum, Show)
 
 -- | Registers are 8-bits wide
 type Reg     = Word8

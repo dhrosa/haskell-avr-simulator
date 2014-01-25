@@ -21,6 +21,7 @@ data PCUpdate = PCStall
 data RegFileUpdate = NoRegFileUpdate
                    | RegFileUpdate R.RegNum
                    | RegFileUpdateMovePair R.RegNum R.RegNum
+                   | RegFileUpdateAddress R.AddressRegNum
                    deriving (Eq, Show)
 
 data SRegUpdate = NoSRegUpdate
@@ -43,19 +44,23 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
   where
     reg = flip R.getReg rf
     regPair = flip R.getRegPair rf
+    addressReg = flip R.getAddressReg rf
     
-    (A.AluResult aluOutput aluSreg) = A.alu aluOp
+    aluResult = A.alu aluOp
+    aluOutput = A.output aluResult
+    wideAluOutput = A.wideOutput aluResult
     
     newRegFile = if skip then rf
                  else case rfUpdate of
                    NoRegFileUpdate -> rf
-                   RegFileUpdate dest -> R.setReg dest aluOutput rf
+                   RegFileUpdate dest -> R.setReg dest aluOutput  rf
                    RegFileUpdateMovePair ra rb -> R.setRegPair ra (regPair rb) rf
+                   RegFileUpdateAddress raddr -> R.setAddressReg raddr wideAluOutput rf
       
     newSreg    = if skip then s
                  else case sregUpdate of
                    NoSRegUpdate -> s
-                   SRegUpdate   -> aluSreg
+                   SRegUpdate   -> A.newSreg aluResult
     
     nextPC     = if skip then (pc + 1)
                  else case pcUpdate of
@@ -85,6 +90,12 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                       PCNext,
                       Cycles 1)
                      
+      ADIW raddr k -> (A.WideOp A.AddWide (addressReg raddr) k s,
+                         RegFileUpdateAddress raddr,
+                         SRegUpdate,
+                         PCNext,
+                         Cycles 2)
+                     
       SUB  ra rb  -> (A.BinaryOp A.Subtract (reg ra) (reg rb) s,
                       RegFileUpdate ra,
                       SRegUpdate,
@@ -108,6 +119,12 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                       SRegUpdate,
                       PCNext,
                       Cycles 1)
+
+      SBIW raddr k -> (A.WideOp A.SubtractWide (addressReg raddr) k s,
+                         RegFileUpdateAddress raddr,
+                         SRegUpdate,
+                         PCNext,
+                         Cycles 2)
 
       AND  ra rb  -> (A.BinaryOp A.And (reg ra) (reg rb) s,
                       RegFileUpdate ra,

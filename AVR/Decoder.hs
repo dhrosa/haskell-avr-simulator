@@ -3,12 +3,13 @@ module AVR.Decoder where
 import Data.Word (Word8, Word16)
 import Data.Bits
 
-import AVR.RegFile (RegNum)
+import AVR.RegFile (RegNum, AddressRegNum)
 import qualified AVR.ALU as A
 
 import Text.Printf (printf)
 
 type Immediate = Word8
+type WideImmediate = Word16
 type Offset = Word16
 type IOAddress = Word8
 
@@ -16,10 +17,12 @@ data Instruction =
   -- Arithmetic instructions
   ADD  RegNum RegNum
   | ADC  RegNum RegNum
+  | ADIW AddressRegNum WideImmediate
   | SUB  RegNum RegNum
   | SUBI RegNum Immediate
   | SBC  RegNum RegNum
   | SBCI RegNum Immediate
+  | SBIW AddressRegNum WideImmediate
   | AND  RegNum RegNum
   | ANDI RegNum Immediate
   | OR   RegNum RegNum
@@ -80,10 +83,12 @@ decode :: Word16 -> Instruction
 decode i
   | i =? "0000_11??_????_????" = ADD  rd rr
   | i =? "0001_11??_????_????" = ADC  rd rr
+  | i =? "1001_0110_????_????" = ADIW addressReg wideImmediate
   | i =? "0001_10??_????_????" = SUB  rd rr
   | i =? "0101_????_????_????" = SUBI rd_high immediate
   | i =? "0100_????_????_????" = SBCI rd_high immediate
   | i =? "0000_10??_????_????" = SBC  rd rr
+  | i =? "1001_0111_????_????" = SBIW addressReg wideImmediate
   | i =? "0010_00??_????_????" = AND  rd rr
   | i =? "0111_????_????_????" = ANDI rd_high immediate
   | i =? "0010_10??_????_????" = OR   rd rr
@@ -157,3 +162,5 @@ decode i
     rdPair = toEnum $ bits [4..7] `shiftL` 1
     rrPair = toEnum $ bits [0..3] `shiftL` 1
     
+    addressReg = toEnum $ bits [4, 5]
+    wideImmediate = bits ([0..3] ++ [6, 7])
