@@ -19,10 +19,10 @@ data RegNum =  R0 |  R1 |  R2 |  R3 |
               R28 | R29 | R30 | R31
             deriving (Eq, Enum, Show)
 
--- | The AVR utilizes register pairs for some instructions,
+-- | The AVR utilizes the following register pairs for addressing
 -- | W = R25:R24, X = R27:26, Y = R29:R28, Z = R31:R30
-data WideRegNum = W | X | Y | Z
-                deriving (Eq, Show)
+data AddressRegNum = W | X | Y | Z
+                 deriving (Eq, Show)
 
 -- | Registers are 8-bits wide
 type Reg     = Word8
@@ -35,11 +35,11 @@ newtype RegFile = RegFile { regList :: [Reg] }
 instance Show RegFile where
   show = prettyRegFile
 
-regPair :: WideRegNum -> [RegNum]
-regPair W = [R25, R24]
-regPair X = [R27, R26]
-regPair Y = [R29, R28]
-regPair Z = [R31, R30]
+addressPair :: AddressRegNum -> [RegNum]
+addressPair W = [R25, R24]
+addressPair X = [R27, R26]
+addressPair Y = [R29, R28]
+addressPair Z = [R31, R30]
 
 -- | An regfile filled with zeros
 empty :: RegFile
@@ -49,10 +49,10 @@ empty = RegFile (replicate 32 0)
 getReg :: RegNum -> RegFile -> Reg
 getReg num (RegFile regs) = regs !! (fromEnum num)
 
-getWideReg :: WideRegNum -> RegFile -> WideReg
-getWideReg num rf = (rh `shiftL` 8) + rl
+getAddressReg :: AddressRegNum -> RegFile -> WideReg
+getAddressReg num rf = (rh `shiftL` 8) + rl
   where
-    [rh, rl] = map (fromIntegral . flip getReg rf) (regPair num)
+    [rh, rl] = map (fromIntegral . flip getReg rf) (addressPair num)
 
 -- | Sets a register
 setReg :: RegNum -> Word8 -> RegFile -> RegFile
@@ -60,10 +60,10 @@ setReg num val (RegFile regs) = RegFile (left ++ [val] ++ right)
   where
     (left, _:right) = splitAt (fromEnum num) regs
     
-setWideReg :: WideRegNum -> Word16 -> RegFile -> RegFile
-setWideReg num val rf = setReg rh high $ setReg rl low rf
+setAddressReg :: AddressRegNum -> Word16 -> RegFile -> RegFile
+setAddressReg num val rf = setReg rh high $ setReg rl low rf
   where
-    [rh, rl] = regPair num
+    [rh, rl] = addressPair num
     low = fromIntegral (val .&. 0x00FF)
     high = fromIntegral (val `shiftR` 8)
     
