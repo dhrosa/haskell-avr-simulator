@@ -10,6 +10,7 @@ import Text.Printf (printf)
 
 type Immediate = Word8
 type Offset = Word16
+type IOAddress = Word8
 
 data Instruction =
   -- Arithmetic instructions
@@ -42,6 +43,8 @@ data Instruction =
     -- Data transfer instructions
   | MOV  RegNum RegNum
   | LDI  RegNum Immediate
+  | IN   RegNum IOAddress
+  | OUT  IOAddress RegNum
     -- Bit and bit-test instructions
   | LSR  RegNum
   | ROR  RegNum
@@ -103,6 +106,8 @@ decode i
                                  
   | i =? "0010_11??_????_????" = MOV  rd rr
   | i =? "1110_????_????_????" = LDI  rd_high immediate
+  | i =? "1011_0???_????_????" = IN   rd ioAddr
+  | i =? "1011_1???_????_????" = OUT  ioAddr rd
                                  
   | i =? "1001_010?_????_0110" = LSR  rd
   | i =? "1001_010?_????_0111" = ROR  rd
@@ -144,3 +149,6 @@ decode i
 
     -- Sign extended 12-bit constant
     offset12 = signExtend12 (bits [0..11])
+    
+    ioAddr = bits ([0..3] ++ [9, 10])
+    

@@ -25,6 +25,7 @@ data Command = Regs
              | Back
              | Step
              | Quit
+             | IORegs
              | PMem Int Int
              deriving (Eq, Show)
 
@@ -53,6 +54,7 @@ parseCommand = choice . map try $ [
   parseSimple Disassemble,
   parseSimple Back,
   parseSimple Step,
+  parseSimple IORegs,
   parseSimple Quit,
   parsePMem
   ]
@@ -100,6 +102,9 @@ simulate steps = do
                           
       printPMem start end = unlines $ map pMemLine [start..end]
       pMemLine i = printf "%04X: %04X" i $ programMemory state ! i
+      
+      printIORegs = unlines $ V.toList $ V.imap ioLine (ioRegs state)
+      ioLine i byte = printf "%02x: %02x" i byte
   
   putStrLn ""
   putStrLn $ printf "PC = 0x%04X" (oldProgramCounter state)
@@ -126,6 +131,8 @@ simulate steps = do
               Nothing -> putStrLn "Cannot step any further." >> again
               Just next -> simulate next
       
+            IORegs -> putStrLn printIORegs >> again
+          
             Quit -> putStrLn "Exiting." >> exitSuccess
             
             PMem start end -> putStrLn (printPMem start end) >> again

@@ -44,7 +44,7 @@
     - [X] SBIS
     - [X] BRBS
     - [X] BRBC
-  - [-] Data Transfer [2/42]
+  - [-] Data Transfer [4/42]
     - [X] MOV
     - [ ] MOVW
     - [X] LDI
@@ -79,8 +79,8 @@
     - [ ] ELPM Rd, Z+
     - [ ] SPM
     - [ ] SPM Z+
-    - [ ] IN
-    - [ ] OUT
+    - [X] IN
+    - [X] OUT
     - [ ] PUSH
     - [ ] POP
     - [ ] XCH

@@ -10,6 +10,8 @@ import qualified AVR.StatusReg as S
 import Data.Word (Word16)
 import Data.Bits
 
+import Data.Vector ((!), (//))
+
 data PCUpdate = PCStall
               | PCNext
               | PCSkip
@@ -30,6 +32,7 @@ exec :: Instruction -> AVRState -> AVRState
 exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
   = state { oldProgramCounter = pc,
             programCounter = nextPC,
+            ioRegs = newIORegs,
             regFile = newRegFile,
             sreg = newSreg,
             halted = inst == HALT,
@@ -57,6 +60,10 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                    PCNext     -> pc + 1
                    PCSkip     -> pc + 1
                    PCOffset k -> pc + k + 1
+                   
+    newIORegs = case inst of 
+      OUT io ra -> (ioRegs state) // [(fromIntegral io, reg ra)]
+      _         -> (ioRegs state)
                    
     skipNext = if skip then False
                else (pcUpdate == PCSkip)
@@ -229,6 +236,18 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                      
       LDI  ra imm -> (A.UnaryOp A.Identity imm s,
                       RegFileUpdate ra,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 1)
+                     
+      IN   ra io  -> (A.UnaryOp A.Identity (ioRegs state ! (fromEnum io)) s,
+                      RegFileUpdate ra,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 1)
+                      
+      OUT  _ _  -> (A.NoOp,
+                      NoRegFileUpdate,
                       NoSRegUpdate,
                       PCNext,
                       Cycles 1)
