@@ -20,6 +20,7 @@ data PCUpdate = PCStall
                 
 data RegFileUpdate = NoRegFileUpdate
                    | RegFileUpdate R.RegNum
+                   | RegFileUpdateMovePair R.RegNum R.RegNum
                    deriving (Eq, Show)
 
 data SRegUpdate = NoSRegUpdate
@@ -40,7 +41,8 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
             cycles = oldCycles + getCycles cyclesInc
           }
   where
-    reg num = R.getReg num rf
+    reg = flip R.getReg rf
+    regPair = flip R.getRegPair rf
     
     (A.AluResult aluOutput aluSreg) = A.alu aluOp
     
@@ -48,6 +50,7 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                  else case rfUpdate of
                    NoRegFileUpdate -> rf
                    RegFileUpdate dest -> R.setReg dest aluOutput rf
+                   RegFileUpdateMovePair ra rb -> R.setRegPair ra (regPair rb) rf
       
     newSreg    = if skip then s
                  else case sregUpdate of
@@ -230,6 +233,12 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                      
       MOV  ra rb  -> (A.UnaryOp A.Identity (reg rb) s,
                       RegFileUpdate ra,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 1)
+                     
+      MOVW ra rb  -> (A.NoOp,
+                      RegFileUpdateMovePair ra rb,
                       NoSRegUpdate,
                       PCNext,
                       Cycles 1)

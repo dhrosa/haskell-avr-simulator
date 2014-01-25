@@ -42,6 +42,7 @@ data Instruction =
   | BRBC A.BitIndex Offset
     -- Data transfer instructions
   | MOV  RegNum RegNum
+  | MOVW RegNum RegNum
   | LDI  RegNum Immediate
   | IN   RegNum IOAddress
   | OUT  IOAddress RegNum
@@ -105,6 +106,7 @@ decode i
   | i =? "1111_01??_????_????" = BRBC bitIndex offset7
                                  
   | i =? "0010_11??_????_????" = MOV  rd rr
+  | i =? "0000_0001_????_????" = MOVW rdPair rrPair
   | i =? "1110_????_????_????" = LDI  rd_high immediate
   | i =? "1011_0???_????_????" = IN   rd ioAddr
   | i =? "1011_1???_????_????" = OUT  ioAddr rd
@@ -122,7 +124,7 @@ decode i
                                  
   | i =? "0000_0000_0000_0000" = NOP
   | i =? "1111_1111_1111_1111" = HALT
-  | otherwise = error $ "Unimplemented instruction encountered while decoding: " ++ printf "0x%016x" i
+  | otherwise = error $ printf "Unimplemented instruction encountered while decoding: 0x%016X" i
   where
     bits inds = foldl (.|.) 0
                 $ zipWith (\val pos -> if val then bit pos else 0) (map (testBit i) inds) [0..]
@@ -151,4 +153,7 @@ decode i
     offset12 = signExtend12 (bits [0..11])
     
     ioAddr = bits ([0..3] ++ [9, 10])
+    
+    rdPair = toEnum $ bits [4..7] `shiftL` 1
+    rrPair = toEnum $ bits [0..3] `shiftL` 1
     
