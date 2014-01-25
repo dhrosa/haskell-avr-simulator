@@ -35,38 +35,50 @@ newtype RegFile = RegFile { regList :: [Reg] }
 instance Show RegFile where
   show = prettyRegFile
 
-addressPair :: AddressRegNum -> [RegNum]
-addressPair W = [R25, R24]
-addressPair X = [R27, R26]
-addressPair Y = [R29, R28]
-addressPair Z = [R31, R30]
+-- | The register number which holds the lower byte of this address register
+addressPairNum :: AddressRegNum -> RegNum
+addressPairNum W = R24
+addressPairNum X = R26
+addressPairNum Y = R28
+addressPairNum Z = R30
 
 -- | An regfile filled with zeros
 empty :: RegFile
-empty = RegFile (replicate 32 0)
+empty = RegFile (replicate 32 0x00)
 
 -- | Retrieves a register
 getReg :: RegNum -> RegFile -> Reg
 getReg num (RegFile regs) = regs !! (fromEnum num)
 
-getAddressReg :: AddressRegNum -> RegFile -> WideReg
-getAddressReg num rf = (rh `shiftL` 8) + rl
+-- | Retrieves a register pair, where the specified reg number represents the lower-byte of the pair
+getRegPair :: RegNum -> RegFile -> WideReg
+getRegPair num rf = (rh `shiftL` 8) + rl
   where
-    [rh, rl] = map (fromIntegral . flip getReg rf) (addressPair num)
+    [rl, rh] = map (fromIntegral . flip getReg rf) [num, succ num]
 
--- | Sets a register
+-- | Retrieves the value of an address register
+getAddressReg :: AddressRegNum -> RegFile -> WideReg
+getAddressReg = getRegPair . addressPairNum
+
+  -- | Sets a register
 setReg :: RegNum -> Word8 -> RegFile -> RegFile
 setReg num val (RegFile regs) = RegFile (left ++ [val] ++ right)
   where
     (left, _:right) = splitAt (fromEnum num) regs
     
-setAddressReg :: AddressRegNum -> Word16 -> RegFile -> RegFile
-setAddressReg num val rf = setReg rh high $ setReg rl low rf
+-- | Sets a pair of registers
+setRegPair :: RegNum -> Word16 -> RegFile -> RegFile 
+setRegPair num val rf = setReg rh high $ setReg rl low rf
   where
-    [rh, rl] = addressPair num
+    [rh, rl] = [succ num, num]
     low = fromIntegral (val .&. 0x00FF)
     high = fromIntegral (val `shiftR` 8)
     
+-- | Sets the value of an address register
+setAddressReg :: AddressRegNum -> Word16 -> RegFile -> RegFile
+setAddressReg = setRegPair . addressPairNum
+    
+-- | Pretty prints a reg file as a table
 prettyRegFile :: RegFile -> String
 prettyRegFile rf = unlines . map (intercalate " | " . map showReg) $ rows
   where
