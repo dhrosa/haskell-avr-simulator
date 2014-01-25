@@ -10,7 +10,7 @@ import Data.Char (toLower)
 import Data.List (inits)
 import Data.Word (Word16)
 import Numeric (readHex)
-import Data.Vector ((!))
+import Data.Vector ((!), Vector)
 import qualified Data.Vector as V
 
 import Control.Monad
@@ -131,5 +131,5 @@ simulate steps = do
             PMem start end -> putStrLn (printPMem start end) >> again
           )
 
-repl :: ProgramMemory -> IO()
+repl :: Vector Word16 -> IO()
 repl pmem = (simulate . toZipper . stepUntilDone . initialState $ pmem) >> return ()
