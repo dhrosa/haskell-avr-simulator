@@ -3,6 +3,7 @@ module AVR.AVRState where
 import qualified AVR.RegFile as R
 import qualified AVR.StatusReg as S
 
+import Data.Bits
 import Data.Vector (Vector, (!), (//))
 import qualified Data.Vector as V
 import Data.Word (Word8, Word16)
@@ -56,3 +57,27 @@ writeDMem addr val state
     newRf     = R.setReg (toEnum $ fromIntegral addr) val (regFile state)
     newIORegs = (ioRegs state) // [(fromIntegral (addr - 32), val)]
     newRam = (ram state) // [(fromIntegral (addr - 96), val)]
+    
+getSP :: AVRState -> Word16
+getSP state = (sph `shiftL` 8) + spl
+  where
+    sph = fromIntegral $ readDMem 0x5E state
+    spl = fromIntegral $ readDMem 0x5D state
+    
+setSP :: Word16 -> AVRState -> AVRState
+setSP sp = writeDMem 0x5E sph . writeDMem 0x5D spl
+  where
+    sph = fromIntegral $ sp `shiftR` 8
+    spl = fromIntegral $ sp .&. 0x00FF
+
+incSP :: AVRState -> AVRState
+incSP = setSP =<< (+1) . getSP
+
+decSP :: AVRState -> AVRState
+decSP = setSP =<< (subtract 1) . getSP
+
+stackPush :: Word8 -> AVRState -> AVRState
+stackPush val state = incSP $ writeDMem (getSP state) val state
+
+stackPop ::  AVRState -> (Word8, AVRState)
+stackPop state = (readDMem (getSP state) state, decSP state)
