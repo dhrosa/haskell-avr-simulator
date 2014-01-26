@@ -1,13 +1,13 @@
 * Implemented opcodes [0/5]
-  - [-] Arithmetic and Logic [15/24]
+  - [-] Arithmetic and Logic [17/24]
     - [X] ADD
     - [X] ADC
-    - [ ] ADIW
+    - [X] ADIW
     - [X] SUB
     - [X] SUBI
     - [X] SBC
     - [X] SBCI
-    - [ ] SBIW
+    - [X] SBIW
     - [X] AND
     - [X] ANDI
     - [X] OR
@@ -44,33 +44,33 @@
     - [X] SBIS
     - [X] BRBS
     - [X] BRBC
-  - [-] Data Transfer [4/42]
+  - [-] Data Transfer [23/42]
     - [X] MOV
-    - [ ] MOVW
+    - [X] MOVW
     - [X] LDI
     - [ ] LDS
-    - [ ] LD Rd, X
-    - [ ] LD Rd, X+
-    - [ ] LD Rd, -X
-    - [ ] LD Rd, Y
-    - [ ] LD Rd, Y+
-    - [ ] LD Rd, -Y
+    - [X] LD Rd, X
+    - [X] LD Rd, X+
+    - [X] LD Rd, -X
+    - [X] LD Rd, Y
+    - [X] LD Rd, Y+
+    - [X] LD Rd, -Y
     - [ ] LDD Rd, Y+q
-    - [ ] LD Rd, Z
-    - [ ] LD Rd, Z+
-    - [ ] LD Rd, -Z
+    - [X] LD Rd, Z
+    - [X] LD Rd, Z+
+    - [X] LD Rd, -Z
     - [ ] LDD, Z+q
     - [ ] STS
-    - [ ] ST X, Rr
-    - [ ] ST X+, Rr
-    - [ ] ST -X, Rr
-    - [ ] ST Y, Rr
-    - [ ] ST Y+, Rr
-    - [ ] ST -Y, Rr
+    - [X] ST X, Rr
+    - [X] ST X+, Rr
+    - [X] ST -X, Rr
+    - [X] ST Y, Rr
+    - [X] ST Y+, Rr
+    - [X] ST -Y, Rr
     - [ ] STD Y+q, Rr
-    - [ ] ST Z, Rr
-    - [ ] ST Z+, Rr
-    - [ ] STD Z+q, Rr
+    - [X] ST Z, Rr
+    - [X] ST Z+, Rr
+    - [X] STD Z+q, Rr
     - [ ] LPM
     - [ ] LPM Rd, Z
     - [ ] LPM Rd, Z+

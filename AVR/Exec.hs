@@ -32,15 +32,15 @@ newtype Cycles = Cycles { getCycles :: Integer }
 
 exec :: Instruction -> AVRState -> AVRState
 exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
-  = state { oldProgramCounter = pc,
-            programCounter = nextPC,
-            ioRegs = newIORegs,
-            regFile = newRegFile,
-            sreg = newSreg,
-            halted = inst == HALT,
-            skipInstruction = skipNext,
-            cycles = oldCycles + getCycles cyclesInc
-          }
+  = updateMemory $ state { oldProgramCounter = pc,
+                           programCounter = nextPC,
+                           ioRegs = newIORegs,
+                           regFile = newRegFile,
+                           sreg = newSreg,
+                           halted = inst == HALT,
+                           skipInstruction = skipNext,
+                           cycles = oldCycles + getCycles cyclesInc
+                         }
   where
     reg = flip R.getReg rf
     regPair = flip R.getRegPair rf
@@ -56,8 +56,18 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                                                                          PostInc -> 1
                                                                          PreDec -> (-1)
                                                                      )
+                            
+      ST raddr incType _ -> R.setAddressReg raddr $ addressReg raddr + (case incType of
+                                                                           NoInc -> 0
+                                                                           PostInc -> 1
+                                                                           PreDec -> (-1)
+                                                                       )
       _ -> id
     
+    updateMemory = case inst of
+      ST raddr incType ra -> writeDMem ((addressReg raddr) - (if incType == PreDec then 1 else 0)) (reg ra)
+      _ -> id
+      
     newRegFile = if skip then rf
                  else addressInc $ case rfUpdate of
                    NoRegFileUpdate -> rf
@@ -280,7 +290,12 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                                NoSRegUpdate,
                                PCNext,
                                Cycles (case inc of NoInc -> 1; PostInc -> 2; PreDec -> 3))
-                     
+                              
+      ST   _ _ _ -> (A.NoOp,
+                     NoRegFileUpdate,
+                     NoSRegUpdate,
+                     PCNext,
+                     Cycles 2)
       
       IN   ra io  -> (A.UnaryOp A.Identity (ioRegs state ! (fromEnum io)) s,
                       RegFileUpdate ra,

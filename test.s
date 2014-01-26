@@ -5,5 +5,8 @@ LDI R16, 0xAA
 LDI R17, 0xBB
 LDI R18, 0xCC
 
-LD R0, Z+
-LD R0, -Z
+LDI R25, 0xFF
+
+ST -Z, R25
+LD R1, Z+
+ST Z, R25
