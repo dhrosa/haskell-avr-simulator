@@ -3,7 +3,7 @@ module AVR.Decoder where
 import Data.Word (Word8, Word16)
 import Data.Bits
 
-import AVR.RegFile (RegNum, AddressRegNum)
+import AVR.RegFile (RegNum, AddressRegNum (..))
 import qualified AVR.ALU as A
 
 import Text.Printf (printf)
@@ -12,6 +12,11 @@ type Immediate = Word8
 type WideImmediate = Word16
 type Offset = Word16
 type IOAddress = Word8
+
+data AddressInc = NoInc
+                | PostInc
+                | PreDec
+                deriving (Eq, Enum, Show)
 
 data Instruction =
   -- Arithmetic instructions
@@ -47,6 +52,7 @@ data Instruction =
   | MOV  RegNum RegNum
   | MOVW RegNum RegNum
   | LDI  RegNum Immediate
+  | LD   RegNum AddressRegNum AddressInc
   | IN   RegNum IOAddress
   | OUT  IOAddress RegNum
     -- Bit and bit-test instructions
@@ -113,6 +119,11 @@ decode i
   | i =? "0010_11??_????_????" = MOV  rd rr
   | i =? "0000_0001_????_????" = MOVW rdPair rrPair
   | i =? "1110_????_????_????" = LDI  rd_high immediate
+  | i =? "1001_000?_????_11??" = LD   rd X addressInc
+  | i =? "1000_000?_????_1000" = LD   rd Y NoInc
+  | i =? "1001_000?_????_10??" = LD   rd Y addressInc
+  | i =? "1000_000?_????_0000" = LD   rd Z NoInc
+  | i =? "1001_000?_????_00??" = LD   rd Z addressInc
   | i =? "1011_0???_????_????" = IN   rd ioAddr
   | i =? "1011_1???_????_????" = OUT  ioAddr rd
                                  
@@ -164,3 +175,5 @@ decode i
     
     addressReg = toEnum $ bits [4, 5]
     wideImmediate = bits ([0..3] ++ [6, 7])
+    
+    addressInc = toEnum $ bits [0, 1]

@@ -50,8 +50,16 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
     aluOutput = A.output aluResult
     wideAluOutput = A.wideOutput aluResult
     
+    addressInc = case inst of
+      LD _ raddr incType -> R.setAddressReg raddr $ addressReg raddr + (case incType of
+                                                                         NoInc -> 0
+                                                                         PostInc -> 1
+                                                                         PreDec -> (-1)
+                                                                     )
+      _ -> id
+    
     newRegFile = if skip then rf
-                 else case rfUpdate of
+                 else addressInc $ case rfUpdate of
                    NoRegFileUpdate -> rf
                    RegFileUpdate dest -> R.setReg dest aluOutput  rf
                    RegFileUpdateMovePair ra rb -> R.setRegPair ra (regPair rb) rf
@@ -266,6 +274,14 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
                       PCNext,
                       Cycles 1)
                      
+      LD   ra raddr inc -> let address = addressReg raddr - (if inc == PreDec then 1 else 0)
+                           in (A.UnaryOp A.Identity (readDMem address state) s,
+                               RegFileUpdate ra,
+                               NoSRegUpdate,
+                               PCNext,
+                               Cycles (case inc of NoInc -> 1; PostInc -> 2; PreDec -> 3))
+                     
+      
       IN   ra io  -> (A.UnaryOp A.Identity (ioRegs state ! (fromEnum io)) s,
                       RegFileUpdate ra,
                       NoSRegUpdate,

@@ -3,7 +3,7 @@ module AVR.AVRState where
 import qualified AVR.RegFile as R
 import qualified AVR.StatusReg as S
 
-import Data.Vector (Vector)
+import Data.Vector (Vector, (!), (//))
 import qualified Data.Vector as V
 import Data.Word (Word8, Word16)
 
@@ -35,3 +35,24 @@ initialState pmem = AVRState {
   cycles = 0,
   halted = False
   }
+
+-- | Reads a value from the data memory, which maps the register file, io regs, and SRAM
+readDMem :: Word16 -> AVRState -> Word8
+readDMem addr state
+  | addr < 32        = R.getReg rnum (regFile state)
+  | (addr - 32) < 64 = (ioRegs state) ! ioAddr
+  | otherwise        = (ram state) ! ramAddr
+    where
+      rnum = toEnum $ fromIntegral addr
+      ioAddr = fromIntegral $ addr - 32
+      ramAddr = fromIntegral $ addr - 96
+
+writeDMem :: Word16 -> Word8 -> AVRState -> AVRState
+writeDMem addr val state
+  | addr < 32         = state {regFile = newRf}
+  | (addr -  32) < 64 = state {ioRegs = newIORegs}
+  | otherwise         = state {ram = newRam}
+  where
+    newRf     = R.setReg (toEnum $ fromIntegral addr) val (regFile state)
+    newIORegs = (ioRegs state) // [(fromIntegral (addr - 32), val)]
+    newRam = (ram state) // [(fromIntegral (addr - 96), val)]
