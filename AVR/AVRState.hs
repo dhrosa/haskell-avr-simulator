@@ -12,6 +12,10 @@ import Data.Word (Word8, Word16)
 
 import Control.Monad
 
+----------------
+-- DATA TYPES --
+----------------
+
 type ProgramCounter = Word16
 
 -- | The AVR has 32 general purpose registers
@@ -51,6 +55,7 @@ data AVRState = AVRState {
   halted :: Bool
   } deriving (Show)
 
+-- | The starting state of the processor, with the given program memory
 initialState :: Vector Word16 -> AVRState
 initialState pmem = AVRState {
   oldProgramCounter = 0,
@@ -65,6 +70,10 @@ initialState pmem = AVRState {
   halted = False
   }
 
+--------------------------------
+-- REGISTER FILE MANIPULATION --
+--------------------------------
+
 -- | The register number which holds the lower byte of this address register
 addressPairNum :: AddressRegNum -> RegNum
 addressPairNum W = R24
@@ -72,6 +81,7 @@ addressPairNum X = R26
 addressPairNum Y = R28
 addressPairNum Z = R30
 
+-- | Retrieves the value of a register
 getReg :: RegNum -> AVRState -> Reg
 getReg num (AVRState {regFile=regs}) = regs !! (fromEnum num)
 
@@ -111,6 +121,10 @@ prettyRegFile state = unlines . map (intercalate " | " . map showReg) $ rows
     rows = transpose . chunksOf 8 . enumFrom $ R0
     showReg num = printf "R%02d: %02X" (fromEnum num) (getReg num state)
 
+-------------------------
+-- MEMORY MANIPULATION --
+-------------------------
+
 -- | Reads a value from the data memory, which maps the register file, io regs, and SRAM
 readDMem :: Word16 -> AVRState -> Word8
 readDMem addr state
@@ -122,6 +136,7 @@ readDMem addr state
       ioAddr = fromIntegral $ addr - 32
       ramAddr = fromIntegral $ addr - 96
 
+-- | Writes a value to the reg file, io regs, or ram, depending on the address
 writeDMem :: Word16 -> Word8 -> AVRState -> AVRState
 writeDMem addr val state
   | addr < 32         = updateRf
@@ -132,27 +147,37 @@ writeDMem addr val state
     newIORegs = (ioRegs state) // [(fromIntegral (addr - 32), val)]
     newRam = (ram state) // [(fromIntegral (addr - 96), val)]
     
+------------------------
+-- STACK MANIPULATION --
+------------------------
+    
+-- | The current stack pointer value
 getSP :: AVRState -> Word16
 getSP state = (sph `shiftL` 8) + spl
   where
     sph = fromIntegral $ readDMem 0x5E state
     spl = fromIntegral $ readDMem 0x5D state
     
+-- | Sets the stack pointer
 setSP :: Word16 -> AVRState -> AVRState
 setSP sp = writeDMem 0x5E sph . writeDMem 0x5D spl
   where
     sph = fromIntegral $ sp `shiftR` 8
     spl = fromIntegral $ sp .&. 0x00FF
 
+-- | Increments the stack pointer by one
 incSP :: AVRState -> AVRState
 incSP = setSP =<< (+1) . getSP
 
+-- | Decrements the stack pointer by one
 decSP :: AVRState -> AVRState
 decSP = setSP =<< (subtract 1) . getSP
 
+-- | Pushes a value onto the stack, this also increments the stack pointer
 stackPush :: Word8 -> AVRState -> AVRState
 stackPush val = incSP . (writeDMem' val =<< getSP)
   where writeDMem' = flip writeDMem
 
+-- | Pops a value off the stack, this also decrements the stack pointer
 stackPop ::  AVRState -> (Word8, AVRState)
 stackPop = liftM2 (,) (readDMem =<< getSP) decSP
