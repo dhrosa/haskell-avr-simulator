@@ -8,6 +8,8 @@ import Data.Vector (Vector, (!), (//))
 import qualified Data.Vector as V
 import Data.Word (Word8, Word16)
 
+import Control.Monad
+
 type ProgramCounter = Word16
 
 data AVRState = AVRState {
@@ -77,7 +79,8 @@ decSP :: AVRState -> AVRState
 decSP = setSP =<< (subtract 1) . getSP
 
 stackPush :: Word8 -> AVRState -> AVRState
-stackPush val state = incSP $ writeDMem (getSP state) val state
+stackPush val = incSP . (writeDMem' val =<< getSP)
+  where writeDMem' = flip writeDMem
 
 stackPop ::  AVRState -> (Word8, AVRState)
-stackPop state = (readDMem (getSP state) state, decSP state)
+stackPop = liftM2 (,) (readDMem =<< getSP) decSP
