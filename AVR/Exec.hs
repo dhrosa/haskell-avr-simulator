@@ -48,18 +48,20 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     aluOutput = A.output aluResult
     wideAluOutput = A.wideOutput aluResult
     
-    addressInc = case inst of
-      LD _ raddr incType -> setAddressReg raddr $ addressReg raddr + (case incType of
-                                                                         NoInc -> 0
-                                                                         PostInc -> 1
-                                                                         PreDec -> (-1)
-                                                                     )
+    updateAddress = case inst of
+      LD _ raddr incType -> setAddressReg raddr $
+                            addressReg raddr + (case incType of
+                                                   NoInc -> 0
+                                                   PostInc -> 1
+                                                   PreDec -> (-1)
+                                               )
                             
-      ST raddr incType _ -> setAddressReg raddr $ addressReg raddr + (case incType of
-                                                                         NoInc -> 0
-                                                                         PostInc -> 1
-                                                                         PreDec -> (-1)
-                                                                       )
+      ST raddr incType _ -> setAddressReg raddr $
+                            addressReg raddr + (case incType of
+                                                   NoInc -> 0
+                                                   PostInc -> 1
+                                                   PreDec -> (-1)
+                                               )
       _ -> id
     
     updateMemory = case inst of
@@ -67,7 +69,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       _ -> id
       
     updateRf = if skip then id
-                 else addressInc . case rfUpdate of
+                 else updateAddress . case rfUpdate of
                    NoRegFileUpdate -> id
                    RegFileUpdate dest -> setReg dest aluOutput
                    RegFileUpdateMovePair ra rb -> setRegPair ra (regPair rb)

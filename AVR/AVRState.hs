@@ -42,6 +42,9 @@ type WideReg = Word16
 -- | Represents the 32 general purpose registers
 type RegFile = [Reg]
 
+type IOAddress = Word8
+type RamAddress = Word16
+
 data AVRState = AVRState {
   oldProgramCounter :: ProgramCounter,
   programCounter :: ProgramCounter,
@@ -125,12 +128,32 @@ prettyRegFile state = unlines . map (intercalate " | " . map showReg) $ rows
 -- MEMORY MANIPULATION --
 -------------------------
 
+-- | Reads an IO register
+readIOReg :: IOAddress -> AVRState -> Word8
+readIOReg addr state = ioRegs state ! (fromIntegral addr)
+
+-- | Writes to an IO register
+writeIOReg :: IOAddress -> Word8 -> AVRState -> AVRState
+writeIOReg addr val state = state {ioRegs = ioRegs'}
+  where
+    ioRegs' = (ioRegs state) // [(fromIntegral addr, val)]
+
+-- | Reads a location in SRAM
+readRam :: RamAddress -> AVRState -> Word8
+readRam addr state = ram state ! (fromIntegral addr)
+
+-- | Writes to a location in SRAM
+writeRam :: RamAddress -> Word8 -> AVRState -> AVRState
+writeRam addr val state = state {ram = ram'}
+  where
+    ram' = ram state // [(fromIntegral addr, val)]
+
 -- | Reads a value from the data memory, which maps the register file, io regs, and SRAM
 readDMem :: Word16 -> AVRState -> Word8
-readDMem addr state
-  | addr < 32        = getReg rnum state
-  | (addr - 32) < 64 = (ioRegs state) ! ioAddr
-  | otherwise        = (ram state) ! ramAddr
+readDMem addr
+  | addr < 32        = getReg rnum
+  | (addr - 32) < 64 = readIOReg ioAddr
+  | otherwise        = readRam ramAddr
     where
       rnum = toEnum $ fromIntegral addr
       ioAddr = fromIntegral $ addr - 32
@@ -138,14 +161,14 @@ readDMem addr state
 
 -- | Writes a value to the reg file, io regs, or ram, depending on the address
 writeDMem :: Word16 -> Word8 -> AVRState -> AVRState
-writeDMem addr val state
-  | addr < 32         = updateRf
-  | (addr -  32) < 64 = state {ioRegs = newIORegs}
-  | otherwise         = state {ram = newRam}
+writeDMem addr
+  | addr < 32         = setReg rnum
+  | (addr -  32) < 64 = writeIOReg ioAddr
+  | otherwise         = writeRam ramAddr
   where
-    updateRf  = setReg (toEnum $ fromIntegral addr) val state
-    newIORegs = (ioRegs state) // [(fromIntegral (addr - 32), val)]
-    newRam = (ram state) // [(fromIntegral (addr - 96), val)]
+    rnum = toEnum $ fromIntegral addr
+    ioAddr = fromIntegral $ addr - 32
+    ramAddr = fromIntegral $ addr - 96
     
 ------------------------
 -- STACK MANIPULATION --
