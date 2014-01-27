@@ -46,7 +46,7 @@ executable avrsim
   main-is:             Main.hs
   
   -- Modules included in this executable, other than Main.
-  other-modules:       AVR.RegFile, AVR.StatusReg, AVR.AVRState, AVR.Fetch, AVR.Decoder, AVR.ALU, AVR.Exec, AVR.REPL
+  other-modules:       AVR.StatusReg, AVR.AVRState, AVR.Fetch, AVR.Decoder, AVR.ALU, AVR.Exec, AVR.REPL
   
   -- Other library packages from which modules are imported.
   build-depends:       base ==4.6.*, process==1.2.*, bytestring, vector, readline, split, parsec

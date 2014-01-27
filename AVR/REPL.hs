@@ -3,7 +3,6 @@ module AVR.REPL where
 import AVR.Decoder (decode, Instruction (NOP))
 import AVR.Fetch (fetch)
 import AVR.Exec (exec)
-import AVR.RegFile (prettyRegFile)
 import AVR.AVRState
 
 import Data.Char (toLower)
@@ -119,7 +118,7 @@ simulate steps = do
         Left err -> print err >> again
         Right command -> addHistory commandStr >> (
           case command of 
-            Regs -> putStrLn (prettyRegFile (regFile state) ++ show (sreg state))  >> again
+            Regs -> putStrLn (prettyRegFile state ++ show (sreg state))  >> again
       
             Disassemble -> putStrLn disassemble >> again
       

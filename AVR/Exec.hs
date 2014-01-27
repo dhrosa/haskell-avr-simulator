@@ -2,7 +2,6 @@ module AVR.Exec where
 
 import AVR.AVRState
 import AVR.Decoder
-import qualified AVR.RegFile as R
 import qualified AVR.ALU as A
 
 import qualified AVR.StatusReg as S
@@ -19,9 +18,9 @@ data PCUpdate = PCStall
               deriving (Eq, Show)
                 
 data RegFileUpdate = NoRegFileUpdate
-                   | RegFileUpdate R.RegNum
-                   | RegFileUpdateMovePair R.RegNum R.RegNum
-                   | RegFileUpdateAddress R.AddressRegNum
+                   | RegFileUpdate RegNum
+                   | RegFileUpdateMovePair RegNum RegNum
+                   | RegFileUpdateAddress AddressRegNum
                    deriving (Eq, Show)
 
 data SRegUpdate = NoSRegUpdate
@@ -31,36 +30,35 @@ data SRegUpdate = NoSRegUpdate
 newtype Cycles = Cycles { getCycles :: Integer }
 
 exec :: Instruction -> AVRState -> AVRState
-exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles, skipInstruction=skip}
-  = updateMemory $ state { oldProgramCounter = pc,
+exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstruction=skip}
+  = updateMemory $ updateRf $ state { oldProgramCounter = pc,
                            programCounter = nextPC,
                            ioRegs = newIORegs,
-                           regFile = newRegFile,
                            sreg = newSreg,
                            halted = inst == HALT,
                            skipInstruction = skipNext,
                            cycles = oldCycles + getCycles cyclesInc
                          }
   where
-    reg = flip R.getReg rf
-    regPair = flip R.getRegPair rf
-    addressReg = flip R.getAddressReg rf
+    reg = flip getReg state
+    regPair = flip getRegPair state
+    addressReg = flip getAddressReg state
     
     aluResult = A.alu aluOp
     aluOutput = A.output aluResult
     wideAluOutput = A.wideOutput aluResult
     
     addressInc = case inst of
-      LD _ raddr incType -> R.setAddressReg raddr $ addressReg raddr + (case incType of
+      LD _ raddr incType -> setAddressReg raddr $ addressReg raddr + (case incType of
                                                                          NoInc -> 0
                                                                          PostInc -> 1
                                                                          PreDec -> (-1)
                                                                      )
                             
-      ST raddr incType _ -> R.setAddressReg raddr $ addressReg raddr + (case incType of
-                                                                           NoInc -> 0
-                                                                           PostInc -> 1
-                                                                           PreDec -> (-1)
+      ST raddr incType _ -> setAddressReg raddr $ addressReg raddr + (case incType of
+                                                                         NoInc -> 0
+                                                                         PostInc -> 1
+                                                                         PreDec -> (-1)
                                                                        )
       _ -> id
     
@@ -68,12 +66,12 @@ exec inst state@AVRState{programCounter=pc, regFile=rf, sreg=s, cycles=oldCycles
       ST raddr incType ra -> writeDMem ((addressReg raddr) - (if incType == PreDec then 1 else 0)) (reg ra)
       _ -> id
       
-    newRegFile = if skip then rf
-                 else addressInc $ case rfUpdate of
-                   NoRegFileUpdate -> rf
-                   RegFileUpdate dest -> R.setReg dest aluOutput  rf
-                   RegFileUpdateMovePair ra rb -> R.setRegPair ra (regPair rb) rf
-                   RegFileUpdateAddress raddr -> R.setAddressReg raddr wideAluOutput rf
+    updateRf = if skip then id
+                 else addressInc . case rfUpdate of
+                   NoRegFileUpdate -> id
+                   RegFileUpdate dest -> setReg dest aluOutput
+                   RegFileUpdateMovePair ra rb -> setRegPair ra (regPair rb)
+                   RegFileUpdateAddress raddr -> setAddressReg raddr wideAluOutput
       
     newSreg    = if skip then s
                  else case sregUpdate of
