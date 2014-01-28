@@ -74,6 +74,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     
     updateMemory = case inst of
       ST raddr incType ra -> writeDMem ((addressReg raddr) - (if incType == PreDec then 1 else 0)) (reg ra)
+      STD raddr q ra      -> writeDMem ((addressReg raddr) + q) (reg ra)
       _ -> id
       
     updateRf = if skip then id
@@ -350,6 +351,12 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                             Cycles 2)
                               
       ST   _ _ _ -> (A.NoOp,
+                     NoRegFileUpdate,
+                     NoSRegUpdate,
+                     PCNext,
+                     Cycles 2)
+      
+      STD _ _ _  -> (A.NoOp,
                      NoRegFileUpdate,
                      NoSRegUpdate,
                      PCNext,

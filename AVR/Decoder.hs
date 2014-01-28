@@ -59,6 +59,7 @@ data Instruction =
   | LD   RegNum AddressRegNum AddressInc
   | LDD  RegNum AddressRegNum Offset
   | ST   AddressRegNum AddressInc RegNum
+  | STD  AddressRegNum Offset RegNum
   | IN   RegNum IOAddress
   | OUT  IOAddress RegNum
   | PUSH RegNum
@@ -158,7 +159,6 @@ decode i
   | i =? "1001_000?_????_0010" = LD   rd Z PreDec
   | i =? "10?0_??0?_????_1???" = LDD  rd Y displacement
   | i =? "10?0_??0?_????_0???" = LDD  rd Z displacement
-                                 -- LDD
                                  -- STS
   | i =? "1001_001?_????_1100" = ST   X NoInc rd
   | i =? "1001_001?_????_1101" = ST   X PostInc rd
@@ -169,7 +169,8 @@ decode i
   | i =? "1000_001?_????_0000" = ST   Z NoInc rd
   | i =? "1001_001?_????_0001" = ST   Z PostInc rd
   | i =? "1001_001?_????_0010" = ST   Z PreDec rd
-                                 -- STD
+  | i =? "10?0_??1?_????_1???" = STD  Y displacement rd
+  | i =? "10?0_??1?_????_0???" = STD  Z displacement rd
                                  -- LPM
                                  -- ELPM
                                  -- SPM
