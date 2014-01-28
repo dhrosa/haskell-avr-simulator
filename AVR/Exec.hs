@@ -25,6 +25,7 @@ data RegFileUpdate = NoRegFileUpdate
 
 data SRegUpdate = NoSRegUpdate
                 | SRegUpdate
+                | SRregSetI
                   deriving (Eq, Show)
 
 newtype Cycles = Cycles { getCycles :: Integer }
@@ -85,6 +86,8 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       
     updateIORegs = case inst of
       OUT addr ra -> writeIOReg addr (reg ra)
+      SBI addr b  -> writeIOReg addr =<< (flip setBit (fromEnum b) . readIOReg addr)
+      CBI addr b  -> writeIOReg addr =<< (flip clearBit (fromEnum b) . readIOReg addr)
       _           -> id
       
     updateStack = case inst of
@@ -400,6 +403,18 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                       SRegUpdate,
                       PCNext,
                       Cycles 1)
+                     
+      SBI  _ _    -> (A.NoOp,
+                      NoRegFileUpdate,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                     
+      CBI _ _     -> (A.NoOp,
+                      NoRegFileUpdate,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 2)
                      
       BST  ra ind -> (A.BitOp A.StoreTransfer (reg ra) ind s,
                       NoRegFileUpdate,

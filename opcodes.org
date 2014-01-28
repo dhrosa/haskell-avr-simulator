@@ -1,4 +1,4 @@
-* Implemented opcodes [0/5]
+* Implemented opcodes [1/5]
   - [-] Arithmetic and Logic [17/24]
     - [X] ADD
     - [X] ADC
@@ -87,15 +87,15 @@
     - [ ] LAS
     - [ ] LAC
     - [ ] LAT
-  - [-] Bit and Bit-test [8/10]
+  - [X] Bit and Bit-test [10/10]
     - [X] LSR
     - [X] ROR
     - [X] ASR
     - [X] SWAP
     - [X] BSET
     - [X] BCLR
-    - [ ] SBI
-    - [ ] CBI
+    - [X] SBI
+    - [X] CBI
     - [X] BST
     - [X] BLD
   - [-] MCU Control Instructions [1/4]

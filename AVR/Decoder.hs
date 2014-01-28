@@ -68,6 +68,8 @@ data Instruction =
   | SWAP RegNum
   | BSET A.BitIndex
   | BCLR A.BitIndex
+  | SBI  IOAddress A.BitIndex
+  | CBI  IOAddress A.BitIndex
   | BST  RegNum A.BitIndex
   | BLD  RegNum A.BitIndex
     -- MCU Control Instructions
@@ -181,8 +183,8 @@ decode i
   | i =? "1001_010?_????_0010" = SWAP rd
   | i =? "1001_0100_0???_1000" = BSET s
   | i =? "1001_0100_1???_1000" = BCLR s
-                                 -- SBI
-                                 -- CBI
+  | i =? "1001_1010_????_????" = SBI ioAddr5 bitIndex
+  | i =? "1001_1000_????_????" = CBI ioAddr5 bitIndex
   | i =? "1111_101?_????_0???" = BST rd bitIndex
   | i =? "1111_100?_????_0???" = BLD rd bitIndex
                                  
@@ -220,6 +222,7 @@ decode i
     offset12 = signExtend12 (bits [0..11])
     
     ioAddr = bits ([0..3] ++ [9, 10])
+    ioAddr5 = bits [3..7]
     
     rdPair = toEnum $ bits [4..7] `shiftL` 1
     rrPair = toEnum $ bits [0..3] `shiftL` 1
