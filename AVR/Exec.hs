@@ -342,6 +342,13 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                                PCNext,
                                Cycles (case inc of NoInc -> 1; PostInc -> 2; PreDec -> 3))
                               
+      LDD ra raddr q -> let address = addressReg raddr + q
+                        in (A.UnaryOp A.Identity (readDMem address state) s,
+                            RegFileUpdate ra,
+                            NoSRegUpdate,
+                            PCNext,
+                            Cycles 2)
+                              
       ST   _ _ _ -> (A.NoOp,
                      NoRegFileUpdate,
                      NoSRegUpdate,

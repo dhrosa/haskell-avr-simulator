@@ -57,6 +57,7 @@ data Instruction =
   | MOVW RegNum RegNum
   | LDI  RegNum Immediate
   | LD   RegNum AddressRegNum AddressInc
+  | LDD  RegNum AddressRegNum Offset
   | ST   AddressRegNum AddressInc RegNum
   | IN   RegNum IOAddress
   | OUT  IOAddress RegNum
@@ -155,6 +156,8 @@ decode i
   | i =? "1000_000?_????_0000" = LD   rd Z NoInc
   | i =? "1001_000?_????_0001" = LD   rd Z PostInc
   | i =? "1001_000?_????_0010" = LD   rd Z PreDec
+  | i =? "10?0_??0?_????_1???" = LDD  rd Y displacement
+  | i =? "10?0_??0?_????_0???" = LDD  rd Z displacement
                                  -- LDD
                                  -- STS
   | i =? "1001_001?_????_1100" = ST   X NoInc rd
@@ -217,7 +220,7 @@ decode i
     signExtend7  x = if testBit x 6
                      then x .|. 0xFF80
                      else x
-
+                          
     offset7  = signExtend7 (bits [3..9])
 
     -- Sign extended 12-bit constant
@@ -231,3 +234,5 @@ decode i
     
     addressReg = toEnum $ bits [4, 5]
     wideImmediate = bits ([0..3] ++ [6, 7])
+    
+    displacement = bits [0, 1, 2, 10, 11, 13]
