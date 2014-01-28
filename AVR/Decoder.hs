@@ -105,8 +105,24 @@ decode i
   | i =? "1001_010?_????_0011" = INC  rd
   | i =? "1001_010?_????_1010" = DEC  rd
   | i =? "1001_010?_????_1111" = SER  rd
+                                 -- MUL
+                                 -- MULS
+                                 -- MULSU
+                                 -- FMUL
+                                 -- FMULS
+                                 -- FMULSU
+                                 -- DES
                                  
   | i =? "1100_????_????_????" = RJMP offset12
+                                 -- IJMP
+                                 -- EIJMP
+                                 -- JMP
+                                 -- RCALL
+                                 -- ICALL
+                                 -- EICALL
+                                 -- CALL
+                                 -- RET
+                                 -- RETI
   | i =? "0001_00??_????_????" = CPSE rd rr
   | i =? "0001_01??_????_????" = CP   rd rr
   | i =? "0000_01??_????_????" = CPC  rd rr
@@ -119,32 +135,48 @@ decode i
   | i =? "0010_11??_????_????" = MOV  rd rr
   | i =? "0000_0001_????_????" = MOVW rdPair rrPair
   | i =? "1110_????_????_????" = LDI  rd_high immediate
+                                 -- LDS
   | i =? "1001_000?_????_11??" = LD   rd X addressInc
   | i =? "1000_000?_????_1000" = LD   rd Y NoInc
   | i =? "1001_000?_????_10??" = LD   rd Y addressInc
   | i =? "1000_000?_????_0000" = LD   rd Z NoInc
   | i =? "1001_000?_????_00??" = LD   rd Z addressInc
+                                 -- LDD
+                                 -- STS
   | i =? "1001_001?_????_11??" = ST   X addressInc rd
   | i =? "1000_001?_????_1000" = ST   Y NoInc rd
   | i =? "1001_001?_????_10??" = ST   Y addressInc rd
   | i =? "1000_001?_????_0000" = ST   Z NoInc rd
   | i =? "1001_001?_????_00??" = ST   Z addressInc rd
+                                 -- STD
+                                 -- LPM
+                                 -- ELPM
+                                 -- SPM
   | i =? "1011_0???_????_????" = IN   rd ioAddr
   | i =? "1011_1???_????_????" = OUT  ioAddr rd
-                                 
+                                 -- PUSH
+                                 -- POP
+                                 -- XCH
+                                 -- LAS
+                                 -- LAS
+                                 -- LAT
+
   | i =? "1001_010?_????_0110" = LSR  rd
   | i =? "1001_010?_????_0111" = ROR  rd
-                                 
   | i =? "1001_010?_????_0101" = ASR  rd
   | i =? "1001_010?_????_0010" = SWAP rd
   | i =? "1001_0100_0???_1000" = BSET s
   | i =? "1001_0100_1???_1000" = BCLR s
-                                 
+                                 -- SBI
+                                 -- CBI
   | i =? "1111_101?_????_0???" = BST rd bitIndex
   | i =? "1111_100?_????_0???" = BLD rd bitIndex
                                  
+                                 -- BREAK
   | i =? "0000_0000_0000_0000" = NOP
+                                 -- SLEEP
   | i =? "1111_1111_1111_1111" = HALT
+                                 -- WDT
   | otherwise = error $ printf "Unimplemented instruction encountered while decoding: 0x%016X" i
   where
     bits inds = foldl (.|.) 0
