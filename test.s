@@ -1,12 +1,11 @@
-ORI R31, 0x10
-MOV R0, R31
-OUT 0x3D, R0
+LDI R30, 0x07
+LDI R31, 0x00
 
-CLR R0
-loop:
-        RCALL func
-        RJMP loop
+ICALL
         
-func:
-        INC R0
-        RET
+INC R0
+INC R0
+INC R0
+INC R0
+INC R0
+INC R0

@@ -14,6 +14,7 @@ data PCUpdate = PCStall
               | PCSkip
               | PCOffset Word16
               | PCStack
+              | PCIndirect
               deriving (Eq, Show)
                 
 data RegFileUpdate = NoRegFileUpdate
@@ -88,10 +89,11 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       
     updateStack = case inst of
       PUSH ra -> stackPush (reg ra)
-      POP  _  -> incSP
+      POP  _  -> stackPop
       RCALL _ -> stackPushPC
+      ICALL   -> stackPushPC
       RET     -> stackPopPC
-      _ -> id
+      _       -> id
       
     newSreg    = if skip then s
                  else case sregUpdate of
@@ -105,6 +107,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                    PCSkip     -> pc + 1
                    PCOffset k -> pc + k + 1
                    PCStack    -> stackPeekPC state
+                   PCIndirect -> addressReg Z
                    
     skipNext = if skip then False
                else (pcUpdate == PCSkip)
@@ -226,10 +229,22 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                        PCOffset k,
                        Cycles 2)
                       
+      IJMP         -> (A.NoOp,
+                       NoRegFileUpdate,
+                       NoSRegUpdate,
+                       PCIndirect,
+                       Cycles 2)
+                      
       RCALL k      -> (A.NoOp,
                        NoRegFileUpdate,
                        NoSRegUpdate,
                        PCOffset k,
+                       Cycles 3)
+                      
+      ICALL        -> (A.NoOp,
+                       NoRegFileUpdate,
+                       NoSRegUpdate,
+                       PCStack,
                        Cycles 3)
                       
       RET          -> (A.NoOp,

@@ -39,7 +39,9 @@ data Instruction =
   | SER  RegNum
     -- Branch instructions
   | RJMP Offset
+  | IJMP
   | RCALL Offset
+  | ICALL
   | RET
   | CPSE RegNum RegNum
   | CP   RegNum RegNum
@@ -118,11 +120,11 @@ decode i
                                  -- DES
                                  
   | i =? "1100_????_????_????" = RJMP offset12
-                                 -- IJMP
+  | i =? "1001_0100_0000_1001" = IJMP
                                  -- EIJMP
                                  -- JMP
   | i =? "1101_????_????_????" = RCALL offset12
-                                 -- ICALL
+  | i =? "1001_0101_0000_1001" = ICALL
                                  -- EICALL
                                  -- CALL
   | i =? "1001_0101_0000_1000" = RET
