@@ -2,13 +2,11 @@ ORI R31, 0x10
 MOV R0, R31
 OUT 0x3D, R0
 
-PUSH R0
-INC R0
-PUSH R0
-INC R0
-PUSH R0
-INC R0
-
-POP R0
-POP R1
-POP R2
+CLR R0
+loop:
+        RCALL func
+        RJMP loop
+        
+func:
+        INC R0
+        RET

@@ -202,9 +202,28 @@ stackPush val = decSP . (writeDMem' val =<< getSP)
   where writeDMem' = flip writeDMem
 
 -- | Pops a value off the stack, this also increments the stack pointer
-stackPop ::  AVRState -> (Word8, AVRState)
-stackPop = liftM2 (,) stackPeek incSP
+stackPop ::  AVRState -> AVRState
+stackPop = incSP
 
 -- | Looks at the value at the top of the stack
 stackPeek :: AVRState -> Word8
 stackPeek = readDMem =<< (+1) . getSP
+
+-- | Pushes the PC onto the stack
+stackPushPC ::  AVRState -> AVRState
+stackPushPC = do
+  pc <- liftM (+1) oldProgramCounter
+  let lo = fromIntegral (pc .&. 0xFF)
+      hi = fromIntegral (pc `shiftR` 8)
+  stackPush hi . stackPush lo
+        
+-- | Looks at the PC saved on the stack
+stackPeekPC :: AVRState -> ProgramCounter
+stackPeekPC = do
+  hi <- liftM fromIntegral stackPeek
+  lo <- liftM fromIntegral (stackPeek . stackPop)
+  return (hi `shiftL` 8 + lo)
+  
+-- | Removes the PC from the stack
+stackPopPC :: AVRState -> AVRState
+stackPopPC = stackPop . stackPop

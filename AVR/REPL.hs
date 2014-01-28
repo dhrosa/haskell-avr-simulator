@@ -26,6 +26,7 @@ data Command = Regs
              | Quit
              | IORegs
              | PMem Int Int
+             | SP
              deriving (Eq, Show)
 
 keywords :: [String] -> Parser String 
@@ -55,7 +56,8 @@ parseCommand = choice . map try $ [
   parseSimple Step,
   parseSimple IORegs,
   parseSimple Quit,
-  parsePMem
+  parsePMem,
+  parseSimple SP
   ]
 
 type Zipper a = ([a], [a])
@@ -135,6 +137,8 @@ simulate steps = do
             Quit -> putStrLn "Exiting." >> exitSuccess
             
             PMem start end -> putStrLn (printPMem start end) >> again
+            
+            SP ->  putStrLn (printf "SP = 0x%04X" (getSP state)) >> again
           )
 
 repl :: Vector Word16 -> IO()

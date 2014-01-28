@@ -13,6 +13,7 @@ data PCUpdate = PCStall
               | PCNext
               | PCSkip
               | PCOffset Word16
+              | PCStack
               deriving (Eq, Show)
                 
 data RegFileUpdate = NoRegFileUpdate
@@ -88,6 +89,8 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     updateStack = case inst of
       PUSH ra -> stackPush (reg ra)
       POP  _  -> incSP
+      RCALL _ -> stackPushPC
+      RET     -> stackPopPC
       _ -> id
       
     newSreg    = if skip then s
@@ -101,6 +104,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                    PCNext     -> pc + 1
                    PCSkip     -> pc + 1
                    PCOffset k -> pc + k + 1
+                   PCStack    -> stackPeekPC state
                    
     skipNext = if skip then False
                else (pcUpdate == PCSkip)
@@ -218,9 +222,21 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       -- Branch instructions
       RJMP k       -> (A.NoOp,
                        NoRegFileUpdate,
-                       SRegUpdate,
+                       NoSRegUpdate,
                        PCOffset k,
                        Cycles 2)
+                      
+      RCALL k      -> (A.NoOp,
+                       NoRegFileUpdate,
+                       NoSRegUpdate,
+                       PCOffset k,
+                       Cycles 3)
+                      
+      RET          -> (A.NoOp,
+                       NoRegFileUpdate,
+                       NoSRegUpdate,
+                       PCStack,
+                       Cycles 4)
       
       CPSE ra rb  -> let equal = (reg ra) == (reg rb)
                      in (A.NoOp,
