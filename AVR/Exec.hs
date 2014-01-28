@@ -9,8 +9,6 @@ import qualified AVR.StatusReg as S
 import Data.Word (Word16)
 import Data.Bits
 
-import Data.Vector ((!), (//))
-
 data PCUpdate = PCStall
               | PCNext
               | PCSkip
@@ -31,14 +29,14 @@ newtype Cycles = Cycles { getCycles :: Integer }
 
 exec :: Instruction -> AVRState -> AVRState
 exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstruction=skip}
-  = updateMemory $ updateRf $ state { oldProgramCounter = pc,
-                           programCounter = nextPC,
-                           ioRegs = newIORegs,
-                           sreg = newSreg,
-                           halted = inst == HALT,
-                           skipInstruction = skipNext,
-                           cycles = oldCycles + getCycles cyclesInc
-                         }
+  = update $ 
+    state { oldProgramCounter = pc,
+            programCounter = nextPC,
+            sreg = newSreg,
+            halted = inst == HALT,
+            skipInstruction = skipNext,
+            cycles = oldCycles + getCycles cyclesInc
+          }
   where
     reg = flip getReg state
     regPair = flip getRegPair state
@@ -47,6 +45,13 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     aluResult = A.alu aluOp
     aluOutput = A.output aluResult
     wideAluOutput = A.wideOutput aluResult
+    
+    update = foldl1 (.) [
+      updateRf,
+      updateIORegs,
+      updateMemory,
+      updateAddress
+      ]
     
     updateAddress = case inst of
       LD _ raddr incType -> setAddressReg raddr $
@@ -69,11 +74,15 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       _ -> id
       
     updateRf = if skip then id
-                 else updateAddress . case rfUpdate of
+                 else case rfUpdate of
                    NoRegFileUpdate -> id
                    RegFileUpdate dest -> setReg dest aluOutput
                    RegFileUpdateMovePair ra rb -> setRegPair ra (regPair rb)
                    RegFileUpdateAddress raddr -> setAddressReg raddr wideAluOutput
+      
+    updateIORegs = case inst of
+      OUT addr ra -> writeIOReg addr (reg ra)
+      _           -> id
       
     newSreg    = if skip then s
                  else case sregUpdate of
@@ -86,10 +95,6 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                    PCNext     -> pc + 1
                    PCSkip     -> pc + 1
                    PCOffset k -> pc + k + 1
-                   
-    newIORegs = case inst of 
-      OUT io ra -> (ioRegs state) // [(fromIntegral io, reg ra)]
-      _         -> (ioRegs state)
                    
     skipNext = if skip then False
                else (pcUpdate == PCSkip)
@@ -297,7 +302,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                      PCNext,
                      Cycles 2)
       
-      IN   ra io  -> (A.UnaryOp A.Identity (ioRegs state ! (fromEnum io)) s,
+      IN   ra io  -> (A.UnaryOp A.Identity (readIOReg io state) s,
                       RegFileUpdate ra,
                       NoSRegUpdate,
                       PCNext,

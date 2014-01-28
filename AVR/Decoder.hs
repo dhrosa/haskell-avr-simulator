@@ -3,7 +3,7 @@ module AVR.Decoder where
 import Data.Word (Word8, Word16)
 import Data.Bits
 
-import AVR.AVRState (RegNum, AddressRegNum (..))
+import AVR.AVRState (IOAddress, RegNum, AddressRegNum (..))
 import qualified AVR.ALU as A
 
 import Text.Printf (printf)
@@ -11,7 +11,6 @@ import Text.Printf (printf)
 type Immediate = Word8
 type WideImmediate = Word16
 type Offset = Word16
-type IOAddress = Word8
 
 data AddressInc = NoInc
                 | PostInc
