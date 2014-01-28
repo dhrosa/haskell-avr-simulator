@@ -55,6 +55,8 @@ data Instruction =
   | ST   AddressRegNum AddressInc RegNum
   | IN   RegNum IOAddress
   | OUT  IOAddress RegNum
+  | PUSH RegNum
+  | POP  RegNum
     -- Bit and bit-test instructions
   | LSR  RegNum
   | ROR  RegNum
@@ -136,26 +138,34 @@ decode i
   | i =? "0000_0001_????_????" = MOVW rdPair rrPair
   | i =? "1110_????_????_????" = LDI  rd_high immediate
                                  -- LDS
-  | i =? "1001_000?_????_11??" = LD   rd X addressInc
+  | i =? "1001_000?_????_1100" = LD   rd X NoInc
+  | i =? "1001_000?_????_1101" = LD   rd X PostInc
+  | i =? "1001_000?_????_1110" = LD   rd X PreDec
   | i =? "1000_000?_????_1000" = LD   rd Y NoInc
-  | i =? "1001_000?_????_10??" = LD   rd Y addressInc
+  | i =? "1001_000?_????_1001" = LD   rd Y PostInc
+  | i =? "1001_000?_????_1010" = LD   rd Y PreDec
   | i =? "1000_000?_????_0000" = LD   rd Z NoInc
-  | i =? "1001_000?_????_00??" = LD   rd Z addressInc
+  | i =? "1001_000?_????_0001" = LD   rd Z PostInc
+  | i =? "1001_000?_????_0010" = LD   rd Z PreDec
                                  -- LDD
                                  -- STS
-  | i =? "1001_001?_????_11??" = ST   X addressInc rd
+  | i =? "1001_001?_????_1100" = ST   X NoInc rd
+  | i =? "1001_001?_????_1101" = ST   X PostInc rd
+  | i =? "1001_001?_????_1110" = ST   X PreDec rd
   | i =? "1000_001?_????_1000" = ST   Y NoInc rd
-  | i =? "1001_001?_????_10??" = ST   Y addressInc rd
+  | i =? "1001_001?_????_1001" = ST   Y PostInc rd
+  | i =? "1001_001?_????_1010" = ST   Y PreDec rd
   | i =? "1000_001?_????_0000" = ST   Z NoInc rd
-  | i =? "1001_001?_????_00??" = ST   Z addressInc rd
+  | i =? "1001_001?_????_0001" = ST   Z PostInc rd
+  | i =? "1001_001?_????_0010" = ST   Z PreDec rd
                                  -- STD
                                  -- LPM
                                  -- ELPM
                                  -- SPM
   | i =? "1011_0???_????_????" = IN   rd ioAddr
   | i =? "1011_1???_????_????" = OUT  ioAddr rd
-                                 -- PUSH
-                                 -- POP
+  | i =? "1001_001?_????_1111" = PUSH rd
+  | i =? "1001_000?_????_1111" = POP  rd
                                  -- XCH
                                  -- LAS
                                  -- LAS
@@ -212,5 +222,3 @@ decode i
     
     addressReg = toEnum $ bits [4, 5]
     wideImmediate = bits ([0..3] ++ [6, 7])
-    
-    addressInc = toEnum $ bits [0, 1]

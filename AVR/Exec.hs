@@ -50,7 +50,8 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       updateRf,
       updateIORegs,
       updateMemory,
-      updateAddress
+      updateAddress,
+      updateStack
       ]
     
     updateAddress = case inst of
@@ -83,6 +84,11 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     updateIORegs = case inst of
       OUT addr ra -> writeIOReg addr (reg ra)
       _           -> id
+      
+    updateStack = case inst of
+      PUSH ra -> stackPush (reg ra)
+      POP  _  -> decSP
+      _ -> id
       
     newSreg    = if skip then s
                  else case sregUpdate of
@@ -314,6 +320,18 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                       PCNext,
                       Cycles 1)
                      
+      PUSH _     -> (A.NoOp,
+                     NoRegFileUpdate,
+                     NoSRegUpdate,
+                     PCNext,
+                     Cycles 2)
+                
+      POP ra      -> (A.UnaryOp A.Identity (stackPeek state) s,
+                      RegFileUpdate ra,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                   
       -- Bit Ops
       
       LSR  ra     -> (A.UnaryOp A.LogicalShiftRight (reg ra) s,

@@ -178,12 +178,12 @@ writeDMem addr
 getSP :: AVRState -> Word16
 getSP state = (sph `shiftL` 8) + spl
   where
-    sph = fromIntegral $ readDMem 0x5E state
-    spl = fromIntegral $ readDMem 0x5D state
+    sph = fromIntegral $ readIOReg 0x3E state
+    spl = fromIntegral $ readIOReg 0x3D state
     
 -- | Sets the stack pointer
 setSP :: Word16 -> AVRState -> AVRState
-setSP sp = writeDMem 0x5E sph . writeDMem 0x5D spl
+setSP sp = writeIOReg 0x3E sph . writeIOReg 0x3D spl
   where
     sph = fromIntegral $ sp `shiftR` 8
     spl = fromIntegral $ sp .&. 0x00FF
@@ -203,4 +203,8 @@ stackPush val = incSP . (writeDMem' val =<< getSP)
 
 -- | Pops a value off the stack, this also decrements the stack pointer
 stackPop ::  AVRState -> (Word8, AVRState)
-stackPop = liftM2 (,) (readDMem =<< getSP) decSP
+stackPop = liftM2 (,) stackPeek decSP
+
+-- | Looks at the value at the top of the stack
+stackPeek :: AVRState -> Word8
+stackPeek = readDMem =<< (subtract 1) . getSP
