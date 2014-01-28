@@ -1,5 +1,1 @@
-LDI R31, 0xFF
-
-OUT 0x1F, R31
-CBI 0x1F, 7
-SBI 0x1F, 7
+RETI

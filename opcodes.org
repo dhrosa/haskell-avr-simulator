@@ -24,7 +24,7 @@
     - [ ] FMULS
     - [ ] FMULSU
     - [ ] DES
-  - [-] Branch [15/19]
+  - [-] Branch [16/19]
     - [X] RJMP
     - [X] IJMP
     - [ ] EIJMP
@@ -33,7 +33,7 @@
     - [ ] EICALL
     - [ ] CALL
     - [X] RET
-    - [ ] RETI
+    - [X] RETI
     - [X] CPSE
     - [X] CP
     - [X] CPC

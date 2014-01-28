@@ -43,6 +43,7 @@ data Instruction =
   | RCALL Offset
   | ICALL
   | RET
+  | RETI
   | CPSE RegNum RegNum
   | CP   RegNum RegNum
   | CPC  RegNum RegNum
@@ -130,7 +131,8 @@ decode i
                                  -- EICALL
                                  -- CALL
   | i =? "1001_0101_0000_1000" = RET
-                                 -- RETI
+  | i =? "1001_0101_0001_1000" = RETI
+                                 
   | i =? "0001_00??_????_????" = CPSE rd rr
   | i =? "0001_01??_????_????" = CP   rd rr
   | i =? "0000_01??_????_????" = CPC  rd rr

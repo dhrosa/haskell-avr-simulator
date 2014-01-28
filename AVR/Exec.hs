@@ -25,7 +25,6 @@ data RegFileUpdate = NoRegFileUpdate
 
 data SRegUpdate = NoSRegUpdate
                 | SRegUpdate
-                | SRregSetI
                   deriving (Eq, Show)
 
 newtype Cycles = Cycles { getCycles :: Integer }
@@ -96,6 +95,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       RCALL _ -> stackPushPC
       ICALL   -> stackPushPC
       RET     -> stackPopPC
+      RETI    -> stackPopPC
       _       -> id
       
     newSreg    = if skip then s
@@ -253,6 +253,12 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       RET          -> (A.NoOp,
                        NoRegFileUpdate,
                        NoSRegUpdate,
+                       PCStack,
+                       Cycles 4)
+                      
+      RETI         -> (A.BitOp A.FlagSet undefined A.Bit7 s,
+                       NoRegFileUpdate,
+                       SRegUpdate,
                        PCStack,
                        Cycles 4)
       
