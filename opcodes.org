@@ -44,7 +44,7 @@
     - [X] SBIS
     - [X] BRBS
     - [X] BRBC
-  - [-] Data Transfer [23/42]
+  - [-] Data Transfer [25/42]
     - [X] MOV
     - [X] MOVW
     - [X] LDI
@@ -81,8 +81,8 @@
     - [ ] SPM Z+
     - [X] IN
     - [X] OUT
-    - [ ] PUSH
-    - [ ] POP
+    - [X] PUSH
+    - [X] POP
     - [ ] XCH
     - [ ] LAS
     - [ ] LAC

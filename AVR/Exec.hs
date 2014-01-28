@@ -87,7 +87,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
       
     updateStack = case inst of
       PUSH ra -> stackPush (reg ra)
-      POP  _  -> decSP
+      POP  _  -> incSP
       _ -> id
       
     newSreg    = if skip then s

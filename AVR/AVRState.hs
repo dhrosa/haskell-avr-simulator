@@ -196,15 +196,15 @@ incSP = setSP =<< (+1) . getSP
 decSP :: AVRState -> AVRState
 decSP = setSP =<< (subtract 1) . getSP
 
--- | Pushes a value onto the stack, this also increments the stack pointer
+-- | Pushes a value onto the stack, this also decrements the stack pointer
 stackPush :: Word8 -> AVRState -> AVRState
-stackPush val = incSP . (writeDMem' val =<< getSP)
+stackPush val = decSP . (writeDMem' val =<< getSP)
   where writeDMem' = flip writeDMem
 
--- | Pops a value off the stack, this also decrements the stack pointer
+-- | Pops a value off the stack, this also increments the stack pointer
 stackPop ::  AVRState -> (Word8, AVRState)
-stackPop = liftM2 (,) stackPeek decSP
+stackPop = liftM2 (,) stackPeek incSP
 
 -- | Looks at the value at the top of the stack
 stackPeek :: AVRState -> Word8
-stackPeek = readDMem =<< (subtract 1) . getSP
+stackPeek = readDMem =<< (+1) . getSP
