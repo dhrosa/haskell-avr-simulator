@@ -58,6 +58,7 @@ data Instruction =
   | MOV  RegNum RegNum
   | MOVW RegNum RegNum
   | LDI  RegNum Immediate
+  | LDS  RegNum Absolute
   | LD   RegNum AddressRegNum AddressInc
   | LDD  RegNum AddressRegNum Offset
   | ST   AddressRegNum AddressInc RegNum
@@ -149,7 +150,7 @@ decode (i, j)
   | i =? "0010_11??_????_????" = MOV  rd rr
   | i =? "0000_0001_????_????" = MOVW rdPair rrPair
   | i =? "1110_????_????_????" = LDI  rd_high immediate
-                                 -- LDS
+  | i =? "1001_000?_????_0000" = LDS  rd j
   | i =? "1001_000?_????_1100" = LD   rd X NoInc
   | i =? "1001_000?_????_1101" = LD   rd X PostInc
   | i =? "1001_000?_????_1110" = LD   rd X PreDec

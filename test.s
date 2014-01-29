@@ -1,2 +1,2 @@
         LDI R31, 0xFF
-        CALL 0x0
+        LDS R0, 31

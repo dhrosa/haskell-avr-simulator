@@ -44,11 +44,11 @@
     - [X] SBIS
     - [X] BRBS
     - [X] BRBC
-  - [-] Data Transfer [28/42]
+  - [-] Data Transfer [29/42]
     - [X] MOV
     - [X] MOVW
     - [X] LDI
-    - [ ] LDS
+    - [X] LDS
     - [X] LD Rd, X
     - [X] LD Rd, X+
     - [X] LD Rd, -X

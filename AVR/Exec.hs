@@ -11,6 +11,7 @@ import Data.Bits
 
 data PCUpdate = PCStall
               | PCNext
+              | PCNextTwo
               | PCSkip
               | PCOffset Word16
               | PCStack
@@ -110,6 +111,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                  else case pcUpdate of
                    PCStall    -> pc
                    PCNext     -> pc + 1
+                   PCNextTwo  -> pc + 2
                    PCSkip     -> pc + 1
                    PCOffset k -> pc + k + 1
                    PCStack    -> stackPeekPC state
@@ -344,6 +346,12 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                       NoSRegUpdate,
                       PCNext,
                       Cycles 1)
+                     
+      LDS ra k    -> (A.UnaryOp A.Identity (readDMem k state) s,
+                      RegFileUpdate ra,
+                      NoSRegUpdate,
+                      PCNextTwo,
+                      Cycles 2)
                      
       LD   ra raddr inc -> let address = addressReg raddr - (if inc == PreDec then 1 else 0)
                            in (A.UnaryOp A.Identity (readDMem address state) s,
