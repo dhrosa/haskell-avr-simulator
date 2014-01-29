@@ -24,14 +24,14 @@
     - [ ] FMULS
     - [ ] FMULSU
     - [ ] DES
-  - [-] Branch [16/19]
+  - [-] Branch [17/19]
     - [X] RJMP
     - [X] IJMP
     - [ ] EIJMP
     - [X] RCALL
     - [X] ICALL
     - [ ] EICALL
-    - [ ] CALL
+    - [X] CALL
     - [X] RET
     - [X] RETI
     - [X] CPSE

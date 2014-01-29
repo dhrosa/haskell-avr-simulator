@@ -6,7 +6,7 @@ import Data.Bits
 import Data.List (intercalate, transpose)
 import Data.List.Split (chunksOf)
 import Text.Printf (printf)
-import Data.Vector (Vector, (!), (//))
+import Data.Vector (Vector, (!), (//), (!?))
 import qualified Data.Vector as V
 import Data.Word (Word8, Word16)
 
@@ -169,6 +169,12 @@ writeDMem addr
     rnum = toEnum $ fromIntegral addr
     ioAddr = fromIntegral $ addr - 32
     ramAddr = fromIntegral $ addr - 96
+    
+-- | Reads two bytes from program memory
+readPMem16 :: Word16 -> AVRState -> Word16
+readPMem16 addr state = case programMemory state !? fromIntegral addr of
+  Nothing -> 0xFFFF
+  Just v  -> v
     
 ------------------------
 -- STACK MANIPULATION --

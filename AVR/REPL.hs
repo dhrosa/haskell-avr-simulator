@@ -9,7 +9,7 @@ import Data.Char (toLower)
 import Data.List (inits)
 import Data.Word (Word16)
 import Numeric (readHex)
-import Data.Vector ((!), Vector)
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 
 import Control.Monad
@@ -20,7 +20,6 @@ import Text.Printf (printf)
 import Text.ParserCombinators.Parsec
 
 data Command = Regs
-             | Disassemble
              | Back
              | Step
              | Quit
@@ -51,7 +50,6 @@ parsePMem = do
 parseCommand :: Parser Command
 parseCommand = choice . map try $ [
   parseSimple Regs,
-  parseSimple Disassemble,
   parseSimple Back,
   parseSimple Step,
   parseSimple IORegs,
@@ -93,16 +91,9 @@ simulate :: Zipper (Instruction, AVRState) -> IO (Zipper (Instruction, AVRState)
 simulate steps = do
   let (inst, state) = current steps
       again = (simulate steps)
-      pmem = programMemory state
-      disassemble = unlines $ V.toList $ V.imap disLine pmem
-      disLine :: Int -> Word16 -> String
-      disLine i word = let marker = if (fromIntegral i == oldProgramCounter state)
-                                    then "> "
-                                    else "  "
-                       in printf "%s%04X: %s" marker i (show . decode $ word)
                           
       printPMem start end = unlines $ map pMemLine [start..end]
-      pMemLine i = printf "%04X: %04X" i $ programMemory state ! i
+      pMemLine i = printf "%04X: %04X" i $ readPMem16 (fromIntegral i) state
       
       printIORegs = unlines $ V.toList $ V.imap ioLine (ioRegs state)
       ioLine i byte = printf "%02x: %02x" i byte
@@ -121,8 +112,6 @@ simulate steps = do
         Right command -> addHistory commandStr >> (
           case command of 
             Regs -> putStrLn (prettyRegFile state ++ show (sreg state))  >> again
-      
-            Disassemble -> putStrLn disassemble >> again
       
             Back -> case (back steps) of
               Nothing   -> putStrLn "Cannot backtrack any further." >> again

@@ -3,10 +3,15 @@ module AVR.Fetch where
 import AVR.AVRState
 
 import Data.Word (Word16)
-import Data.Vector ((!?))
+import Control.Monad
 
-fetch :: AVRState -> Word16
-fetch AVRState {programCounter = pc, programMemory = pmem} =
-  case (pmem !? (fromIntegral pc)) of
-    Nothing  -> 0xFFFF
-    Just val -> val
+fetch :: AVRState -> (Word16, Word16)
+fetch = liftM2 (,)
+        (readPMem16 =<< programCounter)
+        (readPMem16 =<< ((+1) .programCounter))
+        
+-- fetch = do
+--   first  <- readPMem16 =<< programCounter
+--   second <- readPMem16 =<< ((+1) . programCounter)
+--   return (first, second)
+  

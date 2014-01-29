@@ -1,6 +1,6 @@
 module AVR.Decoder where
 
-import Data.Word (Word8, Word16)
+import Data.Word (Word8, Word16, Word16)
 import Data.Bits
 
 import AVR.AVRState (IOAddress, RegNum, AddressRegNum (..))
@@ -11,6 +11,7 @@ import Text.Printf (printf)
 type Immediate = Word8
 type WideImmediate = Word16
 type Offset = Word16
+type Absolute = Word16
 
 data AddressInc = NoInc
                 | PostInc
@@ -42,6 +43,7 @@ data Instruction =
   | IJMP
   | RCALL Offset
   | ICALL
+  | CALL Absolute
   | RET
   | RETI
   | CPSE RegNum RegNum
@@ -95,9 +97,9 @@ val =? pattern = and . zipWith bitMatch bits . filter (/= '_') $ pattern
     bitMatch b '0' = not b
     bitMatch _ _ = error "Unrecognized character in binary pattern."
 
---  | Interprets a 16-bit word from program memory as a 
-decode :: Word16 -> Instruction
-decode i
+-- | Interprets a 16-bit word from program memory as an instruction
+decode :: (Word16, Word16) -> Instruction
+decode (i, j)
   | i =? "0000_11??_????_????" = ADD  rd rr
   | i =? "0001_11??_????_????" = ADC  rd rr
   | i =? "1001_0110_????_????" = ADIW addressReg wideImmediate
@@ -131,7 +133,7 @@ decode i
   | i =? "1101_????_????_????" = RCALL offset12
   | i =? "1001_0101_0000_1001" = ICALL
                                  -- EICALL
-                                 -- CALL
+  | i =? "1001_010?_????_111?" = CALL absolute
   | i =? "1001_0101_0000_1000" = RET
   | i =? "1001_0101_0001_1000" = RETI
                                  
@@ -237,3 +239,6 @@ decode i
     wideImmediate = bits ([0..3] ++ [6, 7])
     
     displacement = bits [0, 1, 2, 10, 11, 13]
+    
+    absolute = bits ([0] ++ [3..8]) `shiftL` 16
+               + (fromIntegral j)

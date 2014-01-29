@@ -26,8 +26,8 @@ main = do
   -- assemble the input
   source <- liftM head getArgs
   _ <- system ("cp " ++ source ++ " temp.s")
-  _ <- system "avr-as -mmcu=avr4 temp.s -o temp.a"
-  _ <- system "avr-ld -mavr1 -Tlinker.x -o temp.elf temp.a"
+  _ <- system "avr-as -mmcu=avr5 temp.s -o temp.a"
+  _ <- system "avr-ld -mavr5 -Tlinker.x -o temp.elf temp.a"
   _ <- system "avr-objcopy -S -O binary temp.elf temp.bin"
   pmem <- liftM (V.fromList . word8to16 . B.unpack) (B.readFile "temp.bin")
   _ <- system "rm -f temp.s temp.a temp.elf temp.bin"
