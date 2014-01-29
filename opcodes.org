@@ -44,7 +44,7 @@
     - [X] SBIS
     - [X] BRBS
     - [X] BRBC
-  - [-] Data Transfer [29/42]
+  - [-] Data Transfer [30/42]
     - [X] MOV
     - [X] MOVW
     - [X] LDI
@@ -60,7 +60,7 @@
     - [X] LD Rd, Z+
     - [X] LD Rd, -Z
     - [X] LDD, Z+q
-    - [ ] STS
+    - [X] STS
     - [X] ST X, Rr
     - [X] ST X+, Rr
     - [X] ST -X, Rr

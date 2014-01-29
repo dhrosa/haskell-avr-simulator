@@ -61,6 +61,7 @@ data Instruction =
   | LDS  RegNum Absolute
   | LD   RegNum AddressRegNum AddressInc
   | LDD  RegNum AddressRegNum Offset
+  | STS  Absolute RegNum
   | ST   AddressRegNum AddressInc RegNum
   | STD  AddressRegNum Offset RegNum
   | IN   RegNum IOAddress
@@ -162,7 +163,7 @@ decode (i, j)
   | i =? "1001_000?_????_0010" = LD   rd Z PreDec
   | i =? "10?0_??0?_????_1???" = LDD  rd Y displacement
   | i =? "10?0_??0?_????_0???" = LDD  rd Z displacement
-                                 -- STS
+  | i =? "1001_001?_????_0000" = STS  j rd
   | i =? "1001_001?_????_1100" = ST   X NoInc rd
   | i =? "1001_001?_????_1101" = ST   X PostInc rd
   | i =? "1001_001?_????_1110" = ST   X PreDec rd

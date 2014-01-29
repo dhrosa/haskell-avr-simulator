@@ -1,2 +1,2 @@
-        LDI R31, 0xFF
-        LDS R0, 31
+        LDI R16, 0xAB
+        STS 0x1F, R16
