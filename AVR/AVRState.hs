@@ -170,6 +170,13 @@ writeDMem addr
     ioAddr = fromIntegral $ addr - 32
     ramAddr = fromIntegral $ addr - 96
     
+readPMem8 :: Word16 -> AVRState -> Word8
+readPMem8 addr state = if testBit addr 0 then hi else lo
+  where
+    val = readPMem16 (addr `shiftR` 1) state
+    hi = fromIntegral $ val `shiftR` 8
+    lo = fromIntegral $ val .&. 0xFF
+    
 -- | Reads two bytes from program memory
 readPMem16 :: Word16 -> AVRState -> Word16
 readPMem16 addr state = case programMemory state !? fromIntegral addr of

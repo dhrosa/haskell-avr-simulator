@@ -3,7 +3,7 @@ module AVR.Decoder where
 import Data.Word (Word8, Word16, Word16)
 import Data.Bits
 
-import AVR.AVRState (IOAddress, RegNum, AddressRegNum (..))
+import AVR.AVRState (IOAddress, RegNum(..), AddressRegNum (..))
 import qualified AVR.ALU as A
 
 import Text.Printf (printf)
@@ -64,6 +64,7 @@ data Instruction =
   | STS  Absolute RegNum
   | ST   AddressRegNum AddressInc RegNum
   | STD  AddressRegNum Offset RegNum
+  | LPM  RegNum AddressInc
   | IN   RegNum IOAddress
   | OUT  IOAddress RegNum
   | PUSH RegNum
@@ -175,6 +176,9 @@ decode (i, j)
   | i =? "1001_001?_????_0010" = ST   Z PreDec rd
   | i =? "10?0_??1?_????_1???" = STD  Y displacement rd
   | i =? "10?0_??1?_????_0???" = STD  Z displacement rd
+  | i =? "1001_0101_1100_1000" = LPM  R0 NoInc
+  | i =? "1001_000?_????_0100" = LPM  rd NoInc
+  | i =? "1001_000?_????_0101" = LPM  rd PostInc
                                  -- LPM
                                  -- ELPM
                                  -- SPM

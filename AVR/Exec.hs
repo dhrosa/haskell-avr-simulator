@@ -72,6 +72,10 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                                                    PostInc -> 1
                                                    PreDec -> (-1)
                                                )
+                            
+      LPM _ incType -> setAddressReg Z $
+                       addressReg Z + (if incType == PostInc then 1 else 0)
+                       
       _ -> id
     
     updateMemory = case inst of
@@ -368,6 +372,12 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                             PCNext,
                             Cycles 2)
                               
+      STS _ _    -> (A.NoOp,
+                     NoRegFileUpdate,
+                     NoSRegUpdate,
+                     PCNextTwo,
+                     Cycles 2)
+                           
       ST   _ _ _ -> (A.NoOp,
                      NoRegFileUpdate,
                      NoSRegUpdate,
@@ -379,13 +389,12 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                      NoSRegUpdate,
                      PCNext,
                      Cycles 2)
-                    
-                    
-      STS _ _    -> (A.NoOp,
-                     NoRegFileUpdate,
-                     NoSRegUpdate,
-                     PCNextTwo,
-                     Cycles 2)
+      
+      LPM ra _    -> (A.UnaryOp A.Identity (readPMem8 (addressReg Z) state) s,
+                      RegFileUpdate ra,
+                      NoSRegUpdate,
+                      PCNext,
+                      Cycles 3)
       
       IN   ra io  -> (A.UnaryOp A.Identity (readIOReg io state) s,
                       RegFileUpdate ra,
