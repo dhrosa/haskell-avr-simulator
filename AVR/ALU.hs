@@ -27,9 +27,12 @@ data BinaryOpType = Add
                   | And
                   | Or
                   | Xor
-                  | Multiply
-                  | MultiplyS
-                  | MultiplySU
+                  | Multiply   -- ^ Multiply two unsigned numbers
+                  | MultiplyS  -- ^ Multiply two signed numbers
+                  | MultiplySU -- ^ Multiply signed by unsigned
+                  | FMultiply
+                  | FMultiplyS
+                  | FMultiplySU
                   deriving (Eq, Enum, Show)
                            
 data WideOpType = AddWide
@@ -182,6 +185,24 @@ alu (BinaryOp op a b s) = case op of
                        z = val == 0
                    in WideAluResult val $ s {S.carry = c, S.zero = z}
   
+  FMultiply     -> let val' = wideOutput $ alu (BinaryOp Multiply a b s)
+                       val =  val' `shiftL` 1
+                       c = testBit val'  15
+                       z = val == 0
+                   in WideAluResult val $ s {S.carry = c, S.zero = z}
+                      
+  FMultiplyS    -> let val' = wideOutput $ alu (BinaryOp MultiplyS a b s)
+                       val =  val' `shiftL` 1
+                       c = testBit val'  15
+                       z = val == 0
+                   in WideAluResult val $ s {S.carry = c, S.zero = z}
+                      
+  FMultiplySU   -> let val' = wideOutput $ alu (BinaryOp MultiplySU a b s)
+                       val =  val' `shiftL` 1
+                       c = testBit val'  15
+                       z = val == 0
+                   in WideAluResult val $ s {S.carry = c, S.zero = z}
+                      
   where
     bit3 :: Word8 -> Bool
     bit7 :: Word8 -> Bool
