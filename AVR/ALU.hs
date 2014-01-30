@@ -4,6 +4,7 @@ import qualified AVR.StatusReg as S
 
 import Data.Bits
 import Data.Word (Word8, Word16)
+import Data.Int (Int8, Int16)
 
 -- | Unary ALU operations
 data UnaryOpType = Complement -- ^ Flip bits
@@ -26,6 +27,9 @@ data BinaryOpType = Add
                   | And
                   | Or
                   | Xor
+                  | Multiply
+                  | MultiplyS
+                  | MultiplySU
                   deriving (Eq, Enum, Show)
                            
 data WideOpType = AddWide
@@ -159,6 +163,25 @@ alu (BinaryOp op a b s) = case op of
   Xor           -> let val = a `xor` b
                    in AluResult val $ (defaultUpdate s False val)
 
+  Multiply      -> let val = (fromIntegral a) * (fromIntegral b)
+                       c = testBit val 15
+                       z = val == 0
+                   in WideAluResult val $ s {S.carry = c, S.zero = z}
+                      
+  MultiplyS     -> let sa = fromIntegral (fromIntegral a :: Int8) :: Int16
+                       sb = fromIntegral (fromIntegral b :: Int8) :: Int16
+                       val = fromIntegral (sa * sb)
+                       c = testBit val 15
+                       z = val == 0
+                   in WideAluResult val $ s {S.carry = c, S.zero = z}
+                      
+  MultiplySU    -> let sa = fromIntegral (fromIntegral a :: Int8) :: Int16
+                       sb = fromIntegral b :: Int16
+                       val = fromIntegral (sa * sb)
+                       c = testBit val 15
+                       z = val == 0
+                   in WideAluResult val $ s {S.carry = c, S.zero = z}
+  
   where
     bit3 :: Word8 -> Bool
     bit7 :: Word8 -> Bool
