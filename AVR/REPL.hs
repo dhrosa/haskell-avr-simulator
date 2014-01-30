@@ -64,8 +64,9 @@ toZipper :: [a] -> Zipper a
 toZipper x = (x, [])
 
 forward :: Zipper a -> Maybe (Zipper a)
-forward ([], _) = Nothing
+forward ([_], _) = Nothing
 forward (a:as, bs) = Just (as, a:bs)
+forward _ = Nothing
 
 back ::  Zipper a -> Maybe (Zipper a)
 back (_, []) = Nothing
