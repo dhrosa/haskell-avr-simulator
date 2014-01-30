@@ -1,8 +1,9 @@
-LDI R30, 0x03
-LDI R31, 0x00
+DEC R16
+INC R18
 
-        LPM R0, Z+
-        LPM R0, Z+
-        LPM R0, Z+
-        LPM
-        
+        MUL R16, R18
+        MULS R16, R18
+        MULSU R16, R18
+        FMUL R16, R18
+        FMULS R16, R18
+        FMULSU R16, R18

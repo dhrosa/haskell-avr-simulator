@@ -22,6 +22,7 @@ data PCUpdate = PCStall
 data RegFileUpdate = NoRegFileUpdate
                    | RegFileUpdate RegNum
                    | RegFileUpdateMovePair RegNum RegNum
+                   | RegFileUpdatePair RegNum
                    | RegFileUpdateAddress AddressRegNum
                    deriving (Eq, Show)
 
@@ -89,6 +90,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                    NoRegFileUpdate -> id
                    RegFileUpdate dest -> setReg dest aluOutput
                    RegFileUpdateMovePair ra rb -> setRegPair ra (regPair rb)
+                   RegFileUpdatePair ra -> setRegPair ra wideAluOutput
                    RegFileUpdateAddress raddr -> setAddressReg raddr wideAluOutput
       
     updateIORegs = case inst of
@@ -235,6 +237,42 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                       SRegUpdate,
                       PCNext,
                       Cycles 1)
+                     
+      MUL ra rb   -> (A.BinaryOp A.Multiply (reg ra) (reg rb) s,
+                      RegFileUpdatePair R0,
+                      SRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                     
+      MULS ra rb  -> (A.BinaryOp A.MultiplyS (reg ra) (reg rb) s,
+                      RegFileUpdatePair R0,
+                      SRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                     
+      MULSU ra rb -> (A.BinaryOp A.MultiplySU (reg ra) (reg rb) s,
+                      RegFileUpdatePair R0,
+                      SRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                     
+      FMUL ra rb   -> (A.BinaryOp A.FMultiply (reg ra) (reg rb) s,
+                      RegFileUpdatePair R0,
+                      SRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                     
+      FMULS ra rb  -> (A.BinaryOp A.FMultiplyS (reg ra) (reg rb) s,
+                      RegFileUpdatePair R0,
+                      SRegUpdate,
+                      PCNext,
+                      Cycles 2)
+                     
+      FMULSU ra rb -> (A.BinaryOp A.FMultiplySU (reg ra) (reg rb) s,
+                      RegFileUpdatePair R0,
+                      SRegUpdate,
+                      PCNext,
+                      Cycles 2)
                      
       -- Branch instructions
       RJMP k       -> (A.NoOp,

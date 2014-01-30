@@ -38,6 +38,12 @@ data Instruction =
   | INC  RegNum
   | DEC  RegNum
   | SER  RegNum
+  | MUL  RegNum RegNum
+  | MULS RegNum RegNum
+  | MULSU RegNum RegNum
+  | FMUL RegNum RegNum
+  | FMULS RegNum RegNum
+  | FMULSU RegNum RegNum
     -- Branch instructions
   | RJMP Offset
   | IJMP
@@ -121,10 +127,12 @@ decode (i, j)
   | i =? "1001_010?_????_0011" = INC  rd
   | i =? "1001_010?_????_1010" = DEC  rd
   | i =? "1001_010?_????_1111" = SER  rd
-                                 -- MUL
-                                 -- MULS
-                                 -- MULSU
-                                 -- FMUL
+  | i =? "1001_11??_????_????" = MUL  rd rr
+  | i =? "0000_0010_????_????" = MULS rd_high rr_high
+  | i =? "0000_0011_0???_0???" = MULSU rd3 rr3
+  | i =? "0000_0011_0???_1???" = FMUL rd3 rr3
+  | i =? "0000_0011_1???_0???" = FMULS rd3 rr3
+  | i =? "0000_0011_1???_1???" = FMULSU rd3 rr3
                                  -- FMULS
                                  -- FMULSU
                                  -- DES
@@ -207,7 +215,7 @@ decode (i, j)
                                  -- SLEEP
   | i =? "1111_1111_1111_1111" = HALT
                                  -- WDT
-  | otherwise = error $ printf "Unimplemented instruction encountered while decoding: 0x%016X" i
+  | otherwise = error $ printf "Unimplemented instruction encountered while decoding: 0x%04X" i
   where
     bits inds = foldl (.|.) 0
                 $ zipWith (\val pos -> if val then bit pos else 0) (map (testBit i) inds) [0..]
@@ -216,6 +224,7 @@ decode (i, j)
     rr = toEnum $ bits [0,1,2,3,9]
     
     rd_high = toEnum $ (bits [4..7]) `setBit` 4
+    rr_high = toEnum $ (bits [0..3]) `setBit` 4
     
     immediate = bits ([0..3] ++ [8..11])
     
@@ -248,3 +257,6 @@ decode (i, j)
     
     absolute = bits ([0] ++ [3..8]) `shiftL` 16
                + (fromIntegral j)
+               
+    rd3 = toEnum $ 16 + bits [4..6]
+    rr3 = toEnum $ 16 + bits [0..3]

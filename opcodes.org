@@ -1,5 +1,5 @@
 * Implemented opcodes [1/5]
-  - [-] Arithmetic and Logic [17/24]
+  - [-] Arithmetic and Logic [23/24]
     - [X] ADD
     - [X] ADC
     - [X] ADIW
@@ -17,12 +17,12 @@
     - [X] NEG
     - [X] INC
     - [X] DEC
-    - [ ] MUL
-    - [ ] MULS
-    - [ ] MULSU
-    - [ ] FMUL
-    - [ ] FMULS
-    - [ ] FMULSU
+    - [X] MUL
+    - [X] MULS
+    - [X] MULSU
+    - [X] FMUL
+    - [X] FMULS
+    - [X] FMULSU
     - [ ] DES
   - [-] Branch [17/19]
     - [X] RJMP
