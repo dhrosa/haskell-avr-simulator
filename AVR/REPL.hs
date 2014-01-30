@@ -5,76 +5,16 @@ import AVR.Fetch (fetch)
 import AVR.Exec (exec)
 import AVR.AVRState
 
-import Data.Char (toLower)
-import Data.List (inits)
 import Data.Word (Word16)
-import Numeric (readHex)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-
-import Control.Monad
 
 import System.Console.Readline
 import System.Exit
 import Text.Printf (printf)
-import Text.ParserCombinators.Parsec
 
-data Command = Regs
-             | Back
-             | Step
-             | Quit
-             | IORegs
-             | PMem Int Int
-             | SP
-             deriving (Eq, Show)
-
-keywords :: [String] -> Parser String 
-keywords = choice . map (try . string)
-
--- | Makes a simple parse that matches the name of a command, or any of its prefixes
-parseSimple :: Command -> Parser Command
-parseSimple command = keywords (reverse $ tail $ inits phrase) >> eof >> return command
-                      <?> phrase ++ " command"
-  where phrase = map toLower $ show $ command
-
-parsePMem :: Parser Command
-parsePMem = do
-  _ <- keywords (reverse $ tail $ inits "pmem")
-  _ <- many1 space
-  start <- liftM (fst . head . readHex) (many hexDigit)
-  _ <- many1 space
-  end <- liftM (fst . head . readHex) (many hexDigit)
-  return (PMem start end)
-  
-
-parseCommand :: Parser Command
-parseCommand = choice . map try $ [
-  parseSimple Regs,
-  parseSimple Back,
-  parseSimple Step,
-  parseSimple IORegs,
-  parseSimple Quit,
-  parsePMem,
-  parseSimple SP
-  ]
-
-type Zipper a = ([a], [a])
-
-toZipper :: [a] -> Zipper a
-toZipper x = (x, [])
-
-forward :: Zipper a -> Maybe (Zipper a)
-forward ([_], _) = Nothing
-forward (a:as, bs) = Just (as, a:bs)
-forward _ = Nothing
-
-back ::  Zipper a -> Maybe (Zipper a)
-back (_, []) = Nothing
-back (as, b:bs) = Just (b:as, bs) 
-
-current :: Zipper a -> a
-current (a:_, _) = a
-current _  = error "Cannot take current value of empty zipper."
+import AVR.REPL.Parser
+import AVR.REPL.Zipper
 
 -- | Executes one simulation step
 -- | The return value is a tuple of the instruction executed, and the next state
