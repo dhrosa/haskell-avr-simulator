@@ -16,6 +16,11 @@ import Text.Printf (printf)
 import AVR.REPL.Parser
 import AVR.REPL.Zipper
 
+import Control.Monad
+
+type REPLState = Zipper (Instruction, AVRState)
+type EvalError = String
+
 -- | Executes one simulation step
 -- | The return value is a tuple of the instruction executed, and the next state
 step :: AVRState -> (Instruction, AVRState)
@@ -27,49 +32,53 @@ stepUntilDone :: AVRState -> [(Instruction, AVRState)]
 stepUntilDone initial
   = tail $ takeWhile (not . halted . snd) $ iterate (step . snd) (NOP, initial)
 
--- | REPL (read-evaluate-print-loop) for simulator
-simulate :: Zipper (Instruction, AVRState) -> IO (Zipper (Instruction, AVRState))
-simulate steps = do
-  let (inst, state) = current steps
-      again = (simulate steps)
-                          
-      printPMem start end = unlines $ map pMemLine [start..end]
-      pMemLine i = printf "%04X: %04X" i $ readPMem16 (fromIntegral i) state
+evaluate :: String -> REPLState -> (Either EvalError String, REPLState)
+evaluate line replState = case parse parseCommand "(unknown)" line of
+  Left err -> (Left (show err), replState)
+  Right command -> case command of
+    
+    Regs -> (Right (prettyRegFile state ++ show (sreg state)), replState)
+    
+    Back -> case (back replState) of
+      Nothing -> (Left "Cannot backtrack any further.", replState)
+      Just prev -> (Right (printInst (current prev)), prev)
       
-      printIORegs = unlines $ V.toList $ V.imap ioLine (ioRegs state)
-      ioLine i byte = printf "%02x: %02x" i byte
-  
-  putStrLn ""
-  putStrLn $ printf "PC = 0x%04X" (oldProgramCounter state)
-  print inst
-  putStrLn ""
-  line  <- readline "> "
-  
-  case line of
-    Nothing -> exitSuccess
-    Just commandStr -> 
-      case parse parseCommand "(unknown)" commandStr of 
-        Left err -> print err >> again
-        Right command -> addHistory commandStr >> (
-          case command of 
-            Regs -> putStrLn (prettyRegFile state ++ show (sreg state))  >> again
+    Step -> case (forward replState) of
+      Nothing -> (Left "Cannot step any further.", replState)
+      Just next -> (Right (printInst (current next)), next)
       
-            Back -> case (back steps) of
-              Nothing   -> putStrLn "Cannot backtrack any further." >> again
-              Just prev -> simulate prev
-        
-            Step -> case (forward steps) of
-              Nothing -> putStrLn "Cannot step any further." >> again
-              Just next -> simulate next
+    IORegs -> (Right printIORegs, replState)
+    
+    Quit -> (Left "Quit", replState)
+    
+    PMem start end -> (Right (printPMem start end), replState)
+    
+    SP -> (Right (printf "SP = 0x%04X" (getSP state)), replState)
+    
+  where
+    (_, state) = current replState
+    
+    printPMem start end = unlines $ map pMemLine [start..end]
+    pMemLine i = printf "%04X: %04X" i $ readPMem16 (fromIntegral i) state
       
-            IORegs -> putStrLn printIORegs >> again
-          
-            Quit -> putStrLn "Exiting." >> exitSuccess
-            
-            PMem start end -> putStrLn (printPMem start end) >> again
-            
-            SP ->  putStrLn (printf "SP = 0x%04X" (getSP state)) >> again
-          )
+    printIORegs = unlines $ V.toList $ V.imap ioLine (ioRegs state)
+    ioLine i byte = printf "%02x: %02x" i byte
+    
+    printInst (i,s) = printf "PC = 0x%04X\n%s" (oldProgramCounter s) (show i)
 
+loop :: REPLState -> IO (REPLState)
+loop replState = do
+  line <- readline "> "
+  case line of 
+    Nothing -> exitSuccess
+    Just command -> let (result, nextReplState) = evaluate command replState
+                        message = case result of
+                          Left msg -> "Error: " ++ msg
+                          Right msg -> msg
+                        in putStrLn message >> return nextReplState
+  
+iterateM :: (Monad m) => (a -> m a) -> a -> m a
+iterateM = foldr (>=>) return . repeat
+  
 repl :: Vector Word16 -> IO()
-repl pmem = (simulate . toZipper . stepUntilDone . initialState $ pmem) >> return ()
+repl pmem = (iterateM loop . toZipper . stepUntilDone . initialState $ pmem) >> return ()
