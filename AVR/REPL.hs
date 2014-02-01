@@ -71,11 +71,12 @@ loop replState = do
   line <- readline "> "
   case line of 
     Nothing -> exitSuccess
-    Just command -> let (result, nextReplState) = evaluate command replState
-                        message = case result of
-                          Left msg -> "Error: " ++ msg
-                          Right msg -> msg
-                        in putStrLn message >> return nextReplState
+    Just command -> do
+      let (result, nextReplState) = evaluate command replState
+      case result of
+        Left msg -> putStrLn  $ "Error: " ++ msg
+        Right msg -> addHistory command >> putStrLn msg
+      return nextReplState
   
 iterateM :: (Monad m) => (a -> m a) -> a -> m a
 iterateM = foldr (>=>) return . repeat

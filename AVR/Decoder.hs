@@ -91,8 +91,12 @@ data Instruction =
   | HALT
   deriving (Eq, Show)
 
+
 -- | Number of words in program memory occupied by an instruction
 instructionWords :: (Num a) => Instruction -> a
+instructionWords (CALL _) = 2
+instructionWords (LDS _ _) = 2
+instructionWords (STS _ _) = 2 
 instructionWords _ = 1
 
 -- | Emulates verilog's casex syntax. Matches a 16-bit value against a mask composed of 1, 0, and?'s.
