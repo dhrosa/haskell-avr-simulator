@@ -9,21 +9,38 @@ import AVR.AVRState
 import Control.Applicative
 
 data Expr a where
-  Lit16 :: Word16 -> Expr Word16
-  Lit8 :: Word8 -> Expr Word8
-  Reg :: Int -> Expr Word8
+  -- Basic Units
+  Lit8 :: (Integral a) => a -> Expr Word8
+  Lit16 :: (Integral a) => a -> Expr Word16
+  Reg :: RegNum -> Expr Word8
   
+  -- Memory Access
+  PMem :: (Integral a) => Expr a -> Expr Word16
+  DMem :: (Integral a) => Expr a -> Expr Word8
+  
+  -- Unary Operators
+  Low :: (Integral a, Bits a) => Expr a -> Expr Word8
+  High :: (Integral a, Bits a) => Expr a -> Expr Word8
+  HighExt :: (Integral a, Bits a) => Expr a -> Expr Word8
+  
+  -- Binary operators
   Add :: (Num a) => Expr a -> Expr a -> Expr a
   Subtract :: (Num a) => Expr a -> Expr a -> Expr a
   
-  Low :: (Integral a, Bits a, Integral b) => Expr a -> Expr b
-  High :: (Integral a, Bits a, Integral b) => Expr a -> Expr b
-  HighExt :: (Integral a, Bits a, Integral b) => Expr a -> Expr b
   
+-- | Evaluates the value of an expression in the context of the current processor state.
 eval :: Expr a -> AVRState -> a
-eval (Lit16 n) = const n
-eval (Lit8  n) = const n
-eval (Reg   n) = getReg (toEnum n)
+eval (Lit8 n) = const (fromIntegral n)
+eval (Lit16 n) = const (fromIntegral n)
+eval (Reg   n) = getReg n
+
+eval (PMem  a) = do
+  addr <- fromIntegral <$> eval a
+  fromIntegral . readPMem16 addr
+eval (DMem  a) = do
+  addr <- fromIntegral <$> eval a
+  fromIntegral . readDMem addr
+
 eval (Add a b) = (+) <$> eval a <*> eval b
 eval (Subtract a b) = (-) <$> eval a <*> eval b
 eval (Low a) = do
