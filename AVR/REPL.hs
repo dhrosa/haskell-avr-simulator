@@ -7,16 +7,17 @@ import AVR.AVRState
 
 import Data.Word (Word16)
 import Data.Vector (Vector)
-import qualified Data.Vector as V
 
 import System.Console.Readline
 import System.Exit
-import Text.Printf (printf)
 
-import AVR.REPL.Parser
+import AVR.REPL.Command
+import AVR.REPL.Expr
 import AVR.REPL.Zipper
 
 import Control.Monad
+
+import Text.Parsec (parse)
 
 type REPLState = Zipper (Instruction, AVRState)
 type EvalError = String
@@ -33,38 +34,12 @@ stepUntilDone initial
   = tail $ takeWhile (not . halted . snd) $ iterate (step . snd) (NOP, initial)
 
 evaluate :: String -> REPLState -> (Either EvalError String, REPLState)
-evaluate line replState = case parse parseCommand "(unknown)" line of
+evaluate line replState = case parse parseCommand "repl" line of
   Left err -> (Left (show err), replState)
   Right command -> case command of
-    
-    Regs -> (Right (prettyRegFile state ++ show (sreg state)), replState)
-    
-    Back -> case (back replState) of
-      Nothing -> (Left "Cannot backtrack any further.", replState)
-      Just prev -> (Right (printInst (current prev)), prev)
-      
-    Step -> case (forward replState) of
-      Nothing -> (Left "Cannot step any further.", replState)
-      Just next -> (Right (printInst (current next)), next)
-      
-    IORegs -> (Right printIORegs, replState)
-    
-    Quit -> (Left "Quit", replState)
-    
-    PMem start end -> (Right (printPMem start end), replState)
-    
-    SP -> (Right (printf "SP = 0x%04X" (getSP state)), replState)
-    
-  where
-    (_, state) = current replState
-    
-    printPMem start end = unlines $ map pMemLine [start..end]
-    pMemLine i = printf "%04X: %04X" i $ readPMem16 (fromIntegral i) state
-      
-    printIORegs = unlines $ V.toList $ V.imap ioLine (ioRegs state)
-    ioLine i byte = printf "%02x: %02x" i byte
-    
-    printInst (i,s) = printf "PC = 0x%04X\n%s" (oldProgramCounter s) (show i)
+    Print8 expr -> (Right $ show $ eval expr state, replState)
+    where
+      (_, state) = current replState
 
 loop :: REPLState -> IO (REPLState)
 loop replState = do
@@ -74,7 +49,7 @@ loop replState = do
     Just command -> do
       let (result, nextReplState) = evaluate command replState
       case result of
-        Left msg -> putStrLn  $ "Error: " ++ msg
+        Left err -> putStrLn  $ "Error: " ++ err
         Right msg -> addHistory command >> putStrLn msg
       return nextReplState
   

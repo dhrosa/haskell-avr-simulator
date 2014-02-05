@@ -10,7 +10,7 @@ name:                avrsim
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.0
+version:             0.1.0.0
 
 -- A short (one-line) description of the package.
 synopsis:            Simulator for AVR microcontrollers.
@@ -47,7 +47,9 @@ executable avrsim
   
   -- Modules included in this executable, other than Main.
   other-modules:       AVR.StatusReg, AVR.AVRState, AVR.Fetch, AVR.Decoder, AVR.ALU, AVR.Exec,
-                       AVR.REPL, AVR.REPL.Parser,  AVR.REPL.Zipper, AVR.REPL.Expr
+                       AVR.REPL,  AVR.REPL.Zipper,
+                       AVR.REPL.Expr, AVR.REPL.Expr.Parser,
+                       AVR.REPL.Command
   
   -- Other library packages from which modules are imported.
   build-depends:       base ==4.6.*, process==1.2.*, bytestring, vector, readline, split, parsec

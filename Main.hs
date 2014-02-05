@@ -11,7 +11,6 @@ import System.Process (system)
 import System.Environment (getArgs)
 
 import AVR.REPL
-import AVR.REPL.Expr
 
 -- | Re-interpets a list of Word8 (as in from a ByteString unpack) as a list of Word16
 word8to16 :: [Word8] -> [Word16]
