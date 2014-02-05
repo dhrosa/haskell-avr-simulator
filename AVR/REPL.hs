@@ -36,12 +36,15 @@ stepUntilDone initial
 evaluate :: String -> REPLState -> (Either EvalError String, REPLState)
 evaluate line replState = case parse parseCommand "repl" line of
   Left err -> (Left (show err), replState)
+  
   Right command -> case command of
     Print8 expr -> (Right $ show $ eval expr state, replState)
     Print16 expr -> (Right $ show $ eval expr state, replState)
-    Step   n    -> case (forward replState) of
+    
+    Step   n    -> case (forward n replState) of
       Nothing -> (Left "Cannot step any further.", replState)
-      Just next -> (Right (show inst), next)
+      Just next -> (Right (show . fst . current $ next), next)
+      
     where
       (inst, state) = current replState
 
