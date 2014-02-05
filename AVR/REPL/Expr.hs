@@ -7,6 +7,7 @@ import Data.Bits
 import AVR.AVRState
 
 import Control.Applicative
+import Data.Monoid (mconcat)
 
 data Expr a where
   -- Basic Units
@@ -24,6 +25,9 @@ data Expr a where
   Low :: (Integral a, Bits a) => Expr a -> Expr Word8
   High :: (Integral a, Bits a) => Expr a -> Expr Word8
   HighExt :: (Integral a, Bits a) => Expr a -> Expr Word8
+  
+  ZeroExtend :: (Integral a, Bits a) => Expr a -> Expr Word16
+  SignExtend ::  (Integral a, Bits a) => Expr a -> Expr Word16
   
   -- Binary operators
   Add :: (Num a) => Expr a -> Expr a -> Expr a
@@ -46,6 +50,7 @@ eval (DMem  a) = do
 
 eval (Add a b) = (+) <$> eval a <*> eval b
 eval (Subtract a b) = (-) <$> eval a <*> eval b
+
 eval (Low a) = do
   val <- eval a
   return $ fromIntegral $ 0xFF .&. val
@@ -56,3 +61,14 @@ eval (HighExt a) = do
   val <- eval a
   return $ fromIntegral $ 0xFF .&. (val `shiftR` 16)
   
+eval (ZeroExtend n) = do
+  val <- fromIntegral <$> eval n
+  return val
+  
+eval (SignExtend n) = do
+  val <- eval n
+  let oldBitCount = bitSize val
+      extend = if testBit val (oldBitCount - 1)
+               then foldl (.) id $ map (flip setBit) [oldBitCount .. 15]
+               else id
+  return $ extend $ fromIntegral val
