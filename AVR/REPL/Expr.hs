@@ -6,7 +6,7 @@ import Data.Word
 import Data.Bits
 import AVR.AVRState
 
-import Control.Applicative
+import Control.Applicative hiding (optional)
 
 import Control.Monad
 import Numeric (readHex)
@@ -79,12 +79,18 @@ reg8 = do
   return (Reg (toEnum num))
   <?> "register"
 
+ioReg :: Parser (Expr Word8)
+ioReg = do
+  _ <- choice [string "IO", string "io"]
+  addr <- literal
+  return (IOReg addr)
+
 -- | Parses an 8-bit expression
 expr8 :: Parser (Expr Word8)
 expr8 = buildExpressionParser opTable term
   where
-    binOp name func assoc = Infix (string name >> return func) assoc
-    prefixOp name func = Prefix (string name >> return func)
+    binOp name func = Infix (spaces >> string name >> spaces >> return func)
+    prefixOp name func = Prefix (string name >> spaces >> return func)
 --    postfixOp name func = Postfix (string name >> return func)
                       
     opTable = [
@@ -93,10 +99,46 @@ expr8 = buildExpressionParser opTable term
       ]
               
     term = foldl1 (<|>) [
+      between (string "(") (string ")") expr8,
       lit8,
-      reg8
+      reg8,
+      to8
       ]
            
+pc :: Parser (Expr Word16)
+pc = choice [string "pc", string "PC"] >> return PC
+           
+expr16 :: Parser (Expr Word16)
+expr16 = buildExpressionParser opTable term
+  where
+    binOp name func = Infix (spaces >> string name >> spaces >> return func)
+    prefixOp name func = Prefix (string name >> spaces >> return func)
+
+    opTable = [
+       [prefixOp "P@" PMem],
+       [binOp "+" Add AssocLeft, binOp "-" Subtract AssocLeft]
+      ]
+              
+    term = foldl1 (<|>) [
+      lit16,
+      pc
+      ]
+           
+to8 :: Parser (Expr Word8)
+to8 = do
+  op <- choice ops
+  operand <- between (string "(") (string ")") expr16
+  return (op operand)
+  <?> "16-bit to 8-bit converter"
+  where
+    conversionOp name func = string name >> return func
+    ops = map (uncurry conversionOp) [
+      ("LO", Low),
+      ("HI", High),
+      ("EX", HighExt)
+      ]
+      
+
 -- | Evaluates the value of an expression in the context of the current processor state.
 eval :: Expr a -> AVRState -> a
 eval (Lit8 n) = const (fromIntegral n)
