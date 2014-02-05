@@ -7,7 +7,6 @@ import Data.Bits
 import AVR.AVRState
 
 import Control.Applicative
-import Data.Monoid (mconcat)
 
 data Expr a where
   -- Basic Units

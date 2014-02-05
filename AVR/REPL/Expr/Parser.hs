@@ -1,7 +1,7 @@
 module AVR.REPL.Expr.Parser where
 
 import AVR.REPL.Expr
-       
+
 import Data.Word (Word8, Word16)
   
 import Control.Applicative hiding (optional)
@@ -13,6 +13,13 @@ import Text.Parsec.Char
 import Text.Parsec.Combinator
 import Text.Parsec.Expr
 import Text.Parsec.Prim ((<?>), try)
+
+-- | Wraps another parser in parentheses
+parens :: Parser a -> Parser a
+parens = between left right
+  where
+    left = string "(" >> spaces
+    right = spaces >> string ")"
 
 -- | Parses a decimal value
 decimal :: (Integral a, Read a) => Parser a
@@ -77,7 +84,7 @@ expr8 = buildExpressionParser opTable term
       ]
               
     term = foldl1 (<|>) [
-      between (string "(") (string ")") expr8,
+      parens expr8,
       lit8,
       reg8,
       to8
@@ -85,7 +92,8 @@ expr8 = buildExpressionParser opTable term
            
 pc :: Parser (Expr Word16)
 pc = choice [string "pc", string "PC"] >> return PC
-           
+     
+-- | Parses a 16-bit expression
 expr16 :: Parser (Expr Word16)
 expr16 = buildExpressionParser opTable term
   where
@@ -98,14 +106,17 @@ expr16 = buildExpressionParser opTable term
       ]
               
     term = foldl1 (<|>) [
+      parens expr16,
+      to16,
       lit16,
       pc
       ]
            
+-- | Parses an function that converts a 16-bit expression to an 8-bit expression
 to8 :: Parser (Expr Word8)
 to8 = do
   op <- choice ops
-  operand <- between (string "(") (string ")") expr16
+  operand <- parens expr16
   return (op operand)
   <?> "16-bit to 8-bit converter"
   where
@@ -114,4 +125,18 @@ to8 = do
       ("LO", Low),
       ("HI", High),
       ("EX", HighExt)
+      ]
+
+-- | Parses a function that converts an 8-bit expression to a 16-bit expression
+to16 :: Parser (Expr Word16)
+to16 = do
+  op <- choice ops
+  operand <- parens expr8
+  return (op operand)
+  <?> "8-bit to 16-bit converter"
+  where
+    conversionOp name func = string name >> return func
+    ops = map (uncurry conversionOp) [
+      ("ZE", ZeroExtend),
+      ("SE", SignExtend)
       ]
