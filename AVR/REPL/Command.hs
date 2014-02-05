@@ -37,7 +37,7 @@ step = do
 
 back :: Parser Command
 back = do
-  _ <- string "step"
+  _ <- string "back"
   spaces
   val <- optionMaybe literal
   return $ Back (maybe 1 id val)

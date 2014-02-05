@@ -44,6 +44,10 @@ evaluate line replState = case parse parseCommand "repl" line of
     Step   n    -> case (forward n replState) of
       Nothing -> (Left "Cannot step any further.", replState)
       Just next -> (Right (show . fst . current $ next), next)
+                   
+    Back   n    -> case (back n replState) of
+      Nothing -> (Left "Cannot backtrack any further.", replState)
+      Just prev -> (Right (show . fst . current $ prev), prev)
       
     where
       (inst, state) = current replState
