@@ -38,8 +38,12 @@ evaluate line replState = case parse parseCommand "repl" line of
   Left err -> (Left (show err), replState)
   Right command -> case command of
     Print8 expr -> (Right $ show $ eval expr state, replState)
+    Print16 expr -> (Right $ show $ eval expr state, replState)
+    Step   n    -> case (forward replState) of
+      Nothing -> (Left "Cannot step any further.", replState)
+      Just next -> (Right (show inst), next)
     where
-      (_, state) = current replState
+      (inst, state) = current replState
 
 loop :: REPLState -> IO (REPLState)
 loop replState = do
