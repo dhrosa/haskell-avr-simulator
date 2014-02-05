@@ -36,7 +36,7 @@ literal = try hex <|> decimal
 lit8 :: Parser (Expr Word8)
 lit8 = do
   num <- literal :: Parser Int
-  guard (num <= 0xFF)
+  guard (num <= 0xFF) <?> "8-bit literal between 0 and 0xFF"
   return $ Lit8 num
   <?> "8-bit literal"
   
@@ -44,14 +44,16 @@ lit8 = do
 lit16 :: Parser (Expr Word16)
 lit16 = do
   num <- literal :: Parser Int
-  guard (num <= 0xFFFF)
+  guard (num <= 0xFFFF) <?> "16-bit literal between 0 and 0xFFFF"
   return $ Lit16 num
+  <?> "16-bit literal"
 
 -- | Parses a register
 reg8 :: Parser (Expr Word8)
 reg8 = do
   _ <- oneOf "Rr"
   num <- read <$> many1 digit
+  guard (num <= 31) <?> "reg number between 0 and 31"
   return (Reg (toEnum num))
   <?> "register"
 
