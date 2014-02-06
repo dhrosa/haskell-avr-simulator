@@ -6,7 +6,9 @@ module AVR.REPL.Zipper
          forward,
          back1,
          back,
-         current
+         current,
+         updateCurrent,
+         updateFuture
        )
        where
 
@@ -35,3 +37,12 @@ back n = foldl (>=>) return (replicate n back1)
 current :: Zipper a -> a
 current (a:_, _) = a
 current _  = error "Cannot take current value of empty zipper."
+
+-- | Replaces the current value in the zipper with a new one
+updateCurrent :: a -> Zipper a -> Zipper a
+updateCurrent val (_:as, bs) = (val:as, bs)
+updateCurrent _ z = z
+
+-- | Updates every point past the current point
+updateFuture  :: [a] -> Zipper a -> Zipper a
+updateFuture future (as, _) = (as, future)
