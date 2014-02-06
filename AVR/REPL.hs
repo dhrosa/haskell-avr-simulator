@@ -17,7 +17,6 @@ import AVR.REPL.Expr
 import AVR.REPL.Zipper
 
 import Control.Monad
-
 import Text.Parsec (parse)
 
 type REPLState = Zipper (Instruction, AVRState)
@@ -51,8 +50,11 @@ evaluate line replState = case parse parseCommand "repl" line of
       Just prev -> (Right (show . fst . current $ prev), prev)
       
     Set8 target val -> let updateState = case target of 
-                             TargetReg num -> setReg num (eval val state)
-                       in (Right "", updateCurrent (inst, updateState state) replState)
+                             TargetReg num -> setReg num =<< eval val
+                           newCurrent = (inst, updateState state)
+                           newFuture = stepUntilDone . snd $ newCurrent
+                           
+                       in (Right "", updateFuture newFuture $ updateCurrent newCurrent replState)
     where
       (inst, state) = current replState
 

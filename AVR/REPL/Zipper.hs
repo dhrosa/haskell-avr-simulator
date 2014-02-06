@@ -45,4 +45,4 @@ updateCurrent _ z = z
 
 -- | Updates every point past the current point
 updateFuture  :: [a] -> Zipper a -> Zipper a
-updateFuture future (as, _) = (as, future)
+updateFuture future (_, bs) = (future, bs)
