@@ -3,6 +3,7 @@
 module AVR.REPL.Command
        (
          Command (..),
+         Target8 (..),
          parseCommand
        )
        where

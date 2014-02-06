@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 module AVR.REPL where
 
 import AVR.Decoder (decode, Instruction (NOP))
@@ -49,6 +50,9 @@ evaluate line replState = case parse parseCommand "repl" line of
       Nothing -> (Left "Cannot backtrack any further.", replState)
       Just prev -> (Right (show . fst . current $ prev), prev)
       
+    Set8 target val -> let updateState = case target of 
+                             TargetReg num -> setReg num (eval val state)
+                       in (Right "", updateCurrent (inst, updateState state) replState)
     where
       (inst, state) = current replState
 
