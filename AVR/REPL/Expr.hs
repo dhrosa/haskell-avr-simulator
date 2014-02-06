@@ -38,7 +38,7 @@ eval (Lit8 n) = const (fromIntegral n)
 eval (Lit16 n) = const (fromIntegral n)
 eval (Reg   n) = getReg n
 eval (IOReg n) = readIOReg n
-eval PC        = programCounter
+eval PC        = oldProgramCounter
 
 eval (PMem  a) = do
   addr <- fromIntegral <$> eval a
