@@ -21,11 +21,15 @@ import AVR.REPL.Expr.Parser (expr8, expr16, literal, reg8)
 
 data Target8 = TargetReg RegNum
 
-data Command = Print8 (Expr Word8)
+data Command = Inst
+             | Print8 (Expr Word8)
              | Print16 (Expr Word16)
              | Step Int
              | Back Int
              | Set8 Target8 (Expr Word8)
+
+inst :: Parser Command
+inst = string "inst" >> (return Inst)
 
 print8 :: Parser Command
 print8 = string "print" >> spaces >> (expr8 >>= return . Print8)
@@ -65,6 +69,7 @@ set8 = do
 
 parseCommand :: Parser Command
 parseCommand = foldl1 (<|>) [
+  inst,
   try print16,
   print8,
   step,

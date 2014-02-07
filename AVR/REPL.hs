@@ -33,6 +33,8 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
   Left err -> (Left (show err), history)
   
   Right command -> case command of
+    Inst        -> (Right $ show $ fetchDecode current, history)
+    
     Print8 expr -> (Right $ show $ eval expr current, history)
     Print16 expr -> (Right $ show $ eval expr current, history)
     
@@ -47,7 +49,7 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
     Set8 target val -> let updateState = case target of 
                              TargetReg num -> setReg num =<< eval val
                        in (Right "", updateState current : past)
-
+                          
 loop :: [AVRState] -> IO [AVRState]
 loop replState = do
   line <- readline "> "
