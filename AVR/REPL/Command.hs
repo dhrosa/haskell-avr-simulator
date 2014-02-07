@@ -20,8 +20,12 @@ import AVR.REPL.Expr
 import AVR.REPL.Expr.Parser (expr8, expr16, literal, reg8)
 
 data Target8 = TargetReg RegNum
+             | TargetPCL
+             | TargetPCH
+             | TargetIO IOAddress
+             | TargetData (Expr Word16)
 
-data Command = Inst
+data Command = Inst 
              | Print8 (Expr Word8)
              | Print16 (Expr Word16)
              | Step Int
@@ -53,10 +57,25 @@ back = do
   val <- optionMaybe literal
   return $ Back (maybe 1 id val)
 
-target8 :: Parser Target8
-target8 = do
+targetReg8 :: Parser Target8
+targetReg8 = do
   Reg n <- reg8
   return (TargetReg n)
+
+targetPCL :: Parser Target8
+targetPCL = choice [string "PCL", string "pcl"] >> spaces >> (return TargetPCL)
+
+targetPCH :: Parser Target8
+targetPCH = choice [string "PCH", string "pch"] >> spaces >> (return TargetPCH)
+
+target8 :: Parser Target8
+target8 = foldl1 (<|>) [
+  targetReg8,
+  try targetPCL,
+  try targetPCH
+--  targetIO,
+--  targetData
+  ]
 
 set8 :: Parser Command
 set8 = do
@@ -71,8 +90,8 @@ parseCommand :: Parser Command
 parseCommand = foldl1 (<|>) [
   inst,
   try print16,
-  print8,
-  step,
-  back,
-  set8
+  try print8,
+  try step,
+  try back,
+  try set8
   ]

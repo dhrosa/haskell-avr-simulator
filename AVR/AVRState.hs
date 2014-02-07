@@ -10,6 +10,7 @@ import Data.Vector (Vector, (!), (//), (!?))
 import qualified Data.Vector as V
 import Data.Word (Word8, Word16)
 
+import Control.Applicative
 import Control.Monad
 
 ----------------
@@ -72,6 +73,12 @@ initialState pmem = AVRState {
   cycles = 0,
   halted = False
   }
+
+getPC :: AVRState -> ProgramCounter
+getPC = programCounter
+
+setPC :: ProgramCounter -> AVRState -> AVRState
+setPC pc state = state {programCounter = pc}
 
 --------------------------------
 -- REGISTER FILE MANIPULATION --
@@ -240,3 +247,16 @@ stackPeekPC = do
 -- | Removes the PC from the stack
 stackPopPC :: AVRState -> AVRState
 stackPopPC = stackPop . stackPop
+
+-----------------------
+-- UTILITY FUNCTIONS --
+-----------------------
+
+clearBits :: (Bits a) => [Int] -> a -> a
+clearBits = foldl (.) id . map (flip clearBit)
+
+onLow :: (Bits a, Integral a) => (Word8 -> Word8) -> a -> a
+onLow func = (.|.) <$> clearBits [0..7] <*> fromIntegral . func . fromIntegral
+
+onHigh :: (Bits a, Integral a) => (Word8 -> Word8) -> a -> a
+onHigh func = (.|.) <$> clearBits [8..15] <*> (`shiftL` 8) . fromIntegral . func . fromIntegral . (`shiftR` 8)

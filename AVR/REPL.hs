@@ -51,6 +51,9 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
       
     Set8 target val -> let updateState = case target of 
                              TargetReg num -> setReg num =<< eval val
+                             TargetPCL -> setPC =<< (onLow . const .  eval val) `ap` getPC
+                             TargetPCH -> setPC =<< (onHigh . const .  eval val) `ap` getPC
+                             TargetIO addr -> writeIOReg addr =<< eval val
                        in (Right "", updateState current : past)
                           
   where
