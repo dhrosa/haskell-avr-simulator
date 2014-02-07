@@ -68,13 +68,19 @@ targetPCL = choice [string "PCL", string "pcl"] >> spaces >> (return TargetPCL)
 targetPCH :: Parser Target8
 targetPCH = choice [string "PCH", string "pch"] >> spaces >> (return TargetPCH)
 
+targetIO :: Parser Target8
+targetIO = literal >>= (return . TargetIO)
+
+targetData ::  Parser Target8
+targetData = string "D@" >> (expr16 >>= return . TargetData)
+
 target8 :: Parser Target8
-target8 = foldl1 (<|>) [
+target8 = foldl1 (<|>) $ map try [
   targetReg8,
-  try targetPCL,
-  try targetPCH
---  targetIO,
---  targetData
+  targetPCL,
+  targetPCH,
+  targetIO,
+  targetData
   ]
 
 set8 :: Parser Command

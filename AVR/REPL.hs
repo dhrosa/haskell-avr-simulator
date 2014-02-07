@@ -54,6 +54,7 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
                              TargetPCL -> setPC =<< (onLow . const .  eval val) `ap` getPC
                              TargetPCH -> setPC =<< (onHigh . const .  eval val) `ap` getPC
                              TargetIO addr -> writeIOReg addr =<< eval val
+                             TargetData eAddr -> \s -> writeDMem (eval eAddr s) (eval val s) s
                        in (Right "", updateState current : past)
                           
   where
