@@ -18,6 +18,8 @@ import AVR.REPL.Expr
 import Control.Monad
 import Text.Parsec (parse)
 
+import Text.Printf (printf)
+
 type EvalError = String
 
 fetchDecode :: AVRState -> Instruction
@@ -33,22 +35,28 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
   Left err -> (Left (show err), history)
   
   Right command -> case command of
-    Inst        -> (Right $ show $ fetchDecode current, history)
+    Inst        -> (Right (showCurrentInst history), history)
     
     Print8 expr -> (Right $ show $ eval expr current, history)
+    
     Print16 expr -> (Right $ show $ eval expr current, history)
     
     Step   n    -> let newHistory = (iterate (\h -> step (head h) : h) history) !! n
-                   in (Right $ show $ fetchDecode $ head $ newHistory, newHistory)
+                   in (Right (showCurrentInst history), newHistory)
                    
     Back   n    -> if n >= length history
                    then (Left "Cannot backtrack any further.", [last history])
                    else let newHistory = drop n history
-                        in (Right $ show $ fetchDecode $ head $ newHistory, newHistory)
+                        in (Right (showCurrentInst newHistory), newHistory)
       
     Set8 target val -> let updateState = case target of 
                              TargetReg num -> setReg num =<< eval val
                        in (Right "", updateState current : past)
+                          
+  where
+    showCurrentInst h = printf "\nPC = 0x%04X\n%s\n"
+                        (programCounter (head h))
+                        (show (fetchDecode (head h)))
                           
 loop :: [AVRState] -> IO [AVRState]
 loop replState = do
