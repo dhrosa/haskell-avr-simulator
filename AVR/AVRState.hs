@@ -53,8 +53,7 @@ data AVRState = AVRState {
   ioRegs :: Vector Word8,
   ram :: Vector Word8,
   skipInstruction :: Bool,
-  cycles :: Integer,
-  halted :: Bool
+  cycles :: Integer
   } deriving (Show)
 
 -- | The starting state of the processor, with the given program memory
@@ -67,8 +66,7 @@ initialState pmem = AVRState {
   ioRegs = V.replicate 64 0x00,
   ram = V.replicate 256 0x00,
   skipInstruction = False,
-  cycles = 0,
-  halted = False
+  cycles = 0
   }
 
 getPC :: AVRState -> ProgramCounter

@@ -36,7 +36,6 @@ exec :: Instruction -> AVRState -> AVRState
 exec inst state@AVRState{sreg=s, cycles=oldCycles, skipInstruction=skip}
   = update $ 
     state { sreg = newSreg,
-            halted = inst == HALT,
             skipInstruction = skipNext,
             cycles = oldCycles + getCycles cyclesInc
           }
