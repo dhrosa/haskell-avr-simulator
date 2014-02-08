@@ -38,6 +38,8 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
   Right command -> case command of
     Inst        -> (Right (showCurrentInst history), history)
     
+    Regs        -> (Right (prettyPrintRegs current), history)
+    
     Print8 expr -> (Right $ show $ eval expr current, history)
     
     Print16 expr -> (Right $ show $ eval expr current, history)

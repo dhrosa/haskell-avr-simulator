@@ -126,10 +126,20 @@ setAddressReg = setRegPair . addressPairNum
     
 -- | Pretty prints a reg file as a table
 prettyRegFile :: AVRState -> String
-prettyRegFile state = unlines . map (intercalate " | " . map showReg) $ rows
+prettyRegFile state = unlines $ map (intercalate " | " . map showReg) $ rows
   where
     rows = transpose . chunksOf 8 . enumFrom $ R0
     showReg num = printf "R%02d: %02X" (fromEnum num) (getReg num state)
+
+prettyPrintRegs :: AVRState -> String
+prettyPrintRegs state = unlines $ [prettyRegFile state,
+                                   printf "X : %04X" (getAddressReg X state),
+                                   printf "Y : %04X" (getAddressReg Y state),
+                                   printf "Z : %04X" (getAddressReg Z state),
+                                   printf "SP: %04X" (getSP state),
+                                   printf "PC: %04X" (getPC state),
+                                   show (sreg state)
+                                  ]
 
 -------------------------
 -- MEMORY MANIPULATION --

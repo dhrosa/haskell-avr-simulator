@@ -28,7 +28,8 @@ data Target8 = TargetReg RegNum
 
 data Target16 = TargetPC
 
-data Command = Inst 
+data Command = Inst
+             | Regs
              | Print8 (Expr Word8)
              | Print16 (Expr Word16)
              | Step Int
@@ -38,6 +39,9 @@ data Command = Inst
 
 inst :: Parser Command
 inst = string "inst" >> (return Inst)
+
+regs :: Parser Command
+regs = string "regs" >> return Regs
 
 print8 :: Parser Command
 print8 = string "print" >> spaces >> (expr8 >>= return . Print8)
@@ -114,6 +118,7 @@ set16 = do
 parseCommand :: Parser Command
 parseCommand = foldl1 (<|>) $ map try [
   inst,
+  regs,
   print16,
   print8,
   step,
