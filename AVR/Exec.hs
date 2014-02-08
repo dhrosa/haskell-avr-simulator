@@ -33,11 +33,9 @@ data SRegUpdate = NoSRegUpdate
 newtype Cycles = Cycles { getCycles :: Integer }
 
 exec :: Instruction -> AVRState -> AVRState
-exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstruction=skip}
+exec inst state@AVRState{sreg=s, cycles=oldCycles, skipInstruction=skip}
   = update $ 
-    state { oldProgramCounter = pc,
-            programCounter = nextPC,
-            sreg = newSreg,
+    state { sreg = newSreg,
             halted = inst == HALT,
             skipInstruction = skipNext,
             cycles = oldCycles + getCycles cyclesInc
@@ -52,6 +50,7 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     wideAluOutput = A.wideOutput aluResult
     
     update = foldl1 (.) [
+      updatePC,
       updateRf,
       updateIORegs,
       updateMemory,
@@ -102,11 +101,9 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
     updateStack = case inst of
       PUSH ra -> stackPush (reg ra)
       POP  _  -> stackPop
-      RCALL _ -> stackPushPC
-      ICALL   -> stackPushPC
-      CALL _  -> stackPushPC
-      RET     -> stackPopPC
-      RETI    -> stackPopPC
+      RCALL _ -> stackPush16 =<< (+1) . getPC
+      ICALL   -> stackPush16 =<< (+1) . getPC
+      CALL _  -> stackPush16 =<< (+2) . getPC
       _       -> id
       
     newSreg    = if skip then s
@@ -114,16 +111,16 @@ exec inst state@AVRState{programCounter=pc, sreg=s, cycles=oldCycles, skipInstru
                    NoSRegUpdate -> s
                    SRegUpdate   -> A.newSreg aluResult
     
-    nextPC     = if skip then (pc + 1)
-                 else case pcUpdate of
-                   PCStall    -> pc
-                   PCNext     -> pc + 1
-                   PCNextTwo  -> pc + 2
-                   PCSkip     -> pc + 1
-                   PCOffset k -> pc + k + 1
-                   PCStack    -> stackPeekPC state
-                   PCIndirect -> addressReg Z
-                   PCAbsolute k -> k
+    updatePC   =  if skip then setPC =<< (+1) . getPC
+                  else case pcUpdate of
+                    PCStall    -> id
+                    PCNext     -> setPC =<< (+1) . getPC
+                    PCNextTwo  -> setPC =<< (+2) . getPC
+                    PCSkip     -> setPC =<< (+1) . getPC
+                    PCOffset k -> setPC =<< (+(k+1)) . getPC
+                    PCStack    -> stackPop16 . (setPC =<< stackPeek16)
+                    PCIndirect -> setPC =<< getAddressReg Z
+                    PCAbsolute k -> setPC k
                    
     skipNext = if skip then False
                else (pcUpdate == PCSkip)

@@ -11,7 +11,6 @@ import qualified Data.Vector as V
 import Data.Word (Word8, Word16)
 
 import Control.Applicative
-import Control.Monad
 
 ----------------
 -- DATA TYPES --
@@ -47,7 +46,6 @@ type IOAddress = Word8
 type RamAddress = Word16
 
 data AVRState = AVRState {
-  oldProgramCounter :: ProgramCounter,
   programCounter :: ProgramCounter,
   regFile :: RegFile,
   sreg    :: S.StatusReg,
@@ -62,7 +60,6 @@ data AVRState = AVRState {
 -- | The starting state of the processor, with the given program memory
 initialState :: Vector Word16 -> AVRState
 initialState pmem = AVRState {
-  oldProgramCounter = 0,
   programCounter = 0,
   regFile = replicate 32 0x00,
   sreg = S.empty,
@@ -242,23 +239,22 @@ stackPeek :: AVRState -> Word8
 stackPeek = readDMem =<< (+1) . getSP
 
 -- | Pushes the PC onto the stack
-stackPushPC ::  AVRState -> AVRState
-stackPushPC = do
-  pc <- liftM (+1) oldProgramCounter
-  let lo = fromIntegral (pc .&. 0xFF)
-      hi = fromIntegral (pc `shiftR` 8)
+stackPush16 :: Word16 -> AVRState -> AVRState
+stackPush16 val = do
+  let lo = fromIntegral (val .&. 0xFF)
+      hi = fromIntegral (val `shiftR` 8)
   stackPush hi . stackPush lo
         
 -- | Looks at the PC saved on the stack
-stackPeekPC :: AVRState -> ProgramCounter
-stackPeekPC = do
-  hi <- liftM fromIntegral stackPeek
-  lo <- liftM fromIntegral (stackPeek . stackPop)
+stackPeek16 :: AVRState -> Word16
+stackPeek16 = do
+  hi <- fromIntegral <$> stackPeek
+  lo <- fromIntegral <$> (stackPeek . stackPop)
   return (hi `shiftL` 8 + lo)
   
 -- | Removes the PC from the stack
-stackPopPC :: AVRState -> AVRState
-stackPopPC = stackPop . stackPop
+stackPop16 :: AVRState -> AVRState
+stackPop16 = stackPop . stackPop
 
 -----------------------
 -- UTILITY FUNCTIONS --
