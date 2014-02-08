@@ -18,7 +18,7 @@ import Text.Parsec.Prim ((<?>), (<|>), try)
 
 import AVR.AVRState
 import AVR.REPL.Expr
-import AVR.REPL.Expr.Parser (expr8, expr16, literal, reg8)
+import AVR.REPL.Expr.Parser (expr8, expr16, literal, regNum)
 
 data Target8 = TargetReg RegNum
              | TargetPCL
@@ -61,10 +61,8 @@ back = do
   val <- optionMaybe literal
   return $ Back (maybe 1 id val)
 
-targetReg8 :: Parser Target8
-targetReg8 = do
-  Reg n <- reg8
-  return (TargetReg n)
+targetReg :: Parser Target8
+targetReg = regNum >>= (return . TargetReg)
 
 targetPCL :: Parser Target8
 targetPCL = choice [string "PCL", string "pcl"] >> return TargetPCL
@@ -80,7 +78,7 @@ targetData = string "D@" >> (expr16 >>= return . TargetData)
 
 target8 :: Parser Target8
 target8 = foldl1 (<|>) $ map try [
-  targetReg8,
+  targetReg,
   targetPCL,
   targetPCH,
   targetIO,

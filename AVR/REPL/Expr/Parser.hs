@@ -1,6 +1,7 @@
 module AVR.REPL.Expr.Parser where
 
 import AVR.REPL.Expr
+import AVR.AVRState (RegNum)
 
 import Data.Word (Word8, Word16)
   
@@ -39,6 +40,13 @@ literal :: (Integral a, Read a) => Parser a
 literal = try hex <|> decimal
           <?> "literal"
   
+regNum :: Parser RegNum
+regNum = do
+  _ <- oneOf "Rr"
+  num <- read <$> many1 digit
+  guard (num <= 31) <?> "reg number between 0 and 31"
+  return (toEnum num)
+
 -- | Parses an 8-bit literal
 lit8 :: Parser (Expr Word8)
 lit8 = do
@@ -57,18 +65,10 @@ lit16 = do
 
 -- | Parses a register
 reg8 :: Parser (Expr Word8)
-reg8 = do
-  _ <- oneOf "Rr"
-  num <- read <$> many1 digit
-  guard (num <= 31) <?> "reg number between 0 and 31"
-  return (Reg (toEnum num))
-  <?> "register"
+reg8 = regNum >>= (return . Reg)
 
 ioReg :: Parser (Expr Word8)
-ioReg = do
-  _ <- choice [string "IO", string "io"]
-  addr <- literal
-  return (IOReg addr)
+ioReg = choice [string "IO", string "io"] >> decimal >>= (return . IOReg)
 
 -- | Parses an 8-bit expression
 expr8 :: Parser (Expr Word8)
