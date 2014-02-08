@@ -4,6 +4,7 @@ module AVR.REPL.Command
        (
          Command (..),
          Target8 (..),
+         Target16 (..),
          parseCommand
        )
        where
@@ -25,12 +26,15 @@ data Target8 = TargetReg RegNum
              | TargetIO IOAddress
              | TargetData (Expr Word16)
 
+data Target16 = TargetPC
+
 data Command = Inst 
              | Print8 (Expr Word8)
              | Print16 (Expr Word16)
              | Step Int
              | Back Int
              | Set8 Target8 (Expr Word8)
+             | Set16 Target16 (Expr Word16)
 
 inst :: Parser Command
 inst = string "inst" >> (return Inst)
@@ -63,10 +67,10 @@ targetReg8 = do
   return (TargetReg n)
 
 targetPCL :: Parser Target8
-targetPCL = choice [string "PCL", string "pcl"] >> spaces >> (return TargetPCL)
+targetPCL = choice [string "PCL", string "pcl"] >> return TargetPCL
 
 targetPCH :: Parser Target8
-targetPCH = choice [string "PCH", string "pch"] >> spaces >> (return TargetPCH)
+targetPCH = choice [string "PCH", string "pch"] >> return TargetPCH
 
 targetIO :: Parser Target8
 targetIO = literal >>= (return . TargetIO)
@@ -90,14 +94,32 @@ set8 = do
   _ <- string "="
   spaces
   val <- expr8
-  return $ (Set8 target val)
+  return (Set8 target val)
+
+targetPC :: Parser Target16
+targetPC = choice [string "PC", string "pc"] >> return TargetPC
+
+target16 :: Parser Target16
+target16 = foldl1 (<|>) $ map try [
+  targetPC
+  ]
+
+set16 :: Parser Command
+set16 = do
+  target <- target16
+  spaces
+  _  <- string "="
+  spaces
+  val <- expr16
+  return (Set16 target val)
 
 parseCommand :: Parser Command
-parseCommand = foldl1 (<|>) [
+parseCommand = foldl1 (<|>) $ map try [
   inst,
-  try print16,
-  try print8,
-  try step,
-  try back,
-  try set8
+  print16,
+  print8,
+  step,
+  back,
+  set8,
+  set16
   ]

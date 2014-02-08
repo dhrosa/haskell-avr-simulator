@@ -55,7 +55,12 @@ evaluate line history@(current:past) = case parse parseCommand "repl" line of
                              TargetPCH -> setPC =<< (onHigh . const .  eval val) `ap` getPC
                              TargetIO addr -> writeIOReg addr =<< eval val
                              TargetData eAddr -> \s -> writeDMem (eval eAddr s) (eval val s) s
+                             
                        in (Right "", updateState current : past)
+                          
+    Set16 target val -> let updateState = case target of
+                              TargetPC -> setPC =<< eval val
+                        in (Right "", updateState current : past)
                           
   where
     showCurrentInst h = printf "\nPC = 0x%04X\n%s\n"
