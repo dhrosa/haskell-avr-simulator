@@ -132,14 +132,16 @@ prettyRegFile state = unlines $ map (intercalate " | " . map showReg) $ rows
     showReg num = printf "R%02d: %02X" (fromEnum num) (getReg num state)
 
 prettyPrintRegs :: AVRState -> String
-prettyPrintRegs state = unlines $ [prettyRegFile state,
-                                   printf "X : %04X" (getAddressReg X state),
-                                   printf "Y : %04X" (getAddressReg Y state),
-                                   printf "Z : %04X" (getAddressReg Z state),
-                                   printf "SP: %04X" (getSP state),
-                                   printf "PC: %04X" (getPC state),
-                                   show (sreg state)
-                                  ]
+prettyPrintRegs = unlines . zipWith ($) funcs . repeat
+  where
+    funcs = [prettyRegFile,
+             printf "X : %04X" . getAddressReg X,
+             printf "Y : %04X" . getAddressReg Y,
+             printf "Z : %04X" . getAddressReg Z,
+             printf "SP: %04X" . getSP,
+             printf "PC: %04X" . getPC,
+             show . sreg
+            ]
 
 -------------------------
 -- MEMORY MANIPULATION --
