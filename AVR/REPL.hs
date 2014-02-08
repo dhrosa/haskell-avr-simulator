@@ -31,6 +31,7 @@ step :: AVRState -> AVRState
 step = exec =<< fetchDecode
 
 evaluate :: String -> [AVRState] -> (Either EvalError String, [AVRState])
+evaluate _ [] = error "Cannot evaluate with empty history, this shouldn't happen."
 evaluate line history@(current:past) = case parse parseCommand "repl" line of
   Left err -> (Left (show err), history)
   
