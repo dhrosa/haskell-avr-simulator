@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Main where
 
 import qualified Data.ByteString as B
@@ -8,9 +9,22 @@ import qualified  Data.Vector as V
 import Control.Monad
 
 import System.Process (system)
-import System.Environment (getArgs)
+import System.Console.CmdArgs
 
 import AVR.REPL
+
+data Options = Options {
+  sourceFile :: String
+} deriving (Data, Typeable, Show, Eq)
+
+options :: Options
+options = Options
+  { sourceFile = "test.s"
+                 &= typFile
+                 &= help "The assembler source file."}
+
+getOptions :: IO Options
+getOptions = cmdArgs options
 
 -- | Re-interpets a list of Word8 (as in from a ByteString unpack) as a list of Word16
 word8to16 :: [Word8] -> [Word16]
@@ -24,7 +38,8 @@ word8to16 _ = error "input list must have even number of bytes."
 main :: IO()
 main = do
   -- assemble the input
-  source <- liftM head getArgs
+  opts <- cmdArgsRun $ cmdArgsMode options
+  let source = sourceFile opts
   _ <- system ("cp " ++ source ++ " temp.s")
   _ <- system "avr-as -mmcu=avr5 temp.s -o temp.a"
   _ <- system "avr-ld -mavr5 -Tlinker.x -o temp.elf temp.a"

@@ -10,7 +10,7 @@ name:                avrsim
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.1.4.1
+version:             0.1.4.2
 
 -- A short (one-line) description of the package.
 synopsis:            Simulator for AVR microcontrollers.
@@ -52,6 +52,6 @@ executable avrsim
                        AVR.REPL.Command
   
   -- Other library packages from which modules are imported.
-  build-depends:       base ==4.6.*, process==1.2.*, bytestring, vector, readline, split, parsec
+  build-depends:       base ==4.6.*, process==1.2.*, bytestring, vector, readline, split, parsec, cmdargs
   
   ghc-options:         -Wall -fno-warn-overlapping-patterns
