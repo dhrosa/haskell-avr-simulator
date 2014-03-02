@@ -10,6 +10,9 @@ module AVR.REPL.Command
        where
 
 import Data.Word (Word8, Word16)
+import Data.Maybe (fromMaybe)
+
+import Control.Monad (liftM)
 
 import Text.Parsec.String
 import Text.Parsec.Char
@@ -38,17 +41,17 @@ data Command = Inst
              | Set16 Target16 (Expr Word16)
 
 inst :: Parser Command
-inst = string "inst" >> (return Inst)
+inst = string "inst" >> return Inst
 
 regs :: Parser Command
 regs = string "regs" >> return Regs
 
 print8 :: Parser Command
-print8 = string "print" >> spaces >> (expr8 >>= return . Print8)
+print8 = string "print" >> spaces >> liftM Print8 expr8
          <?> "print command"
 
 print16 :: Parser Command
-print16 = string "print" >> spaces >> (expr16 >>= return . Print16)
+print16 = string "print" >> spaces >> liftM Print16 expr16
          <?> "print command"
     
 step :: Parser Command
@@ -56,17 +59,17 @@ step = do
   _ <- string "step"
   spaces
   val <- optionMaybe literal
-  return $ Step (maybe 1 id val)
+  return $ Step (fromMaybe 1 val)
 
 back :: Parser Command
 back = do
   _ <- string "back"
   spaces
   val <- optionMaybe literal
-  return $ Back (maybe 1 id val)
+  return $ Back (fromMaybe 1 val)
 
 targetReg :: Parser Target8
-targetReg = regNum >>= (return . TargetReg)
+targetReg = liftM TargetReg regNum
 
 targetPCL :: Parser Target8
 targetPCL = choice [string "PCL", string "pcl"] >> return TargetPCL
@@ -75,10 +78,10 @@ targetPCH :: Parser Target8
 targetPCH = choice [string "PCH", string "pch"] >> return TargetPCH
 
 targetIO :: Parser Target8
-targetIO = literal >>= (return . TargetIO)
+targetIO = liftM TargetIO literal
 
 targetData ::  Parser Target8
-targetData = string "D@" >> (expr16 >>= return . TargetData)
+targetData = string "D@" >> liftM TargetData expr16
 
 target8 :: Parser Target8
 target8 = foldl1 (<|>) $ map try [
