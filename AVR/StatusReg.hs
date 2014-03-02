@@ -43,14 +43,14 @@ set _ _ _ = error "Bit index into sreg must be in range 0-7"
 
 instance Show StatusReg where
   show (StatusReg c z n v s h t i) = "SREG: "
-                                     ++ (p i "I")
-                                     ++ (p t "T")
-                                     ++ (p h "H")
-                                     ++ (p s "S")
-                                     ++ (p v "V")
-                                     ++ (p n "N")
-                                     ++ (p z "Z")
-                                     ++ (p c "C")
+                                     ++ p i "I"
+                                     ++ p t "T"
+                                     ++ p h "H"
+                                     ++ p s "S"
+                                     ++ p v "V"
+                                     ++ p n "N"
+                                     ++ p z "Z"
+                                     ++ p c "C"
     where p flag str = if flag then str else "_"
 
   
