@@ -5,6 +5,7 @@ import qualified AVR.StatusReg as S
 import Data.Bits
 import Data.List (intercalate, transpose)
 import Data.List.Split (chunksOf)
+import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
 import Data.Vector (Vector, (!), (//), (!?))
 import qualified Data.Vector as V
@@ -88,7 +89,7 @@ addressPairNum Z = R30
 
 -- | Retrieves the value of a register
 getReg :: RegNum -> AVRState -> Reg
-getReg num (AVRState {regFile=regs}) = regs !! (fromEnum num)
+getReg num (AVRState {regFile=regs}) = regs !! fromEnum num
 
 -- | Retrieves a register pair, where the specified reg number represents the lower-byte of the pair
 getRegPair :: RegNum -> AVRState -> WideReg
@@ -121,7 +122,7 @@ setAddressReg = setRegPair . addressPairNum
     
 -- | Pretty prints a reg file as a table
 prettyRegFile :: AVRState -> String
-prettyRegFile state = unlines $ map (intercalate " | " . map showReg) $ rows
+prettyRegFile state = unlines $ map (intercalate " | " . map showReg) rows
   where
     rows = transpose . chunksOf 8 . enumFrom $ R0
     showReg num = printf "R%02d: %02X" (fromEnum num) (getReg num state)
@@ -144,17 +145,17 @@ prettyPrintRegs = unlines . zipWith ($) funcs . repeat
 
 -- | Reads an IO register
 readIOReg :: IOAddress -> AVRState -> Word8
-readIOReg addr state = ioRegs state ! (fromIntegral addr)
+readIOReg addr state = ioRegs state ! fromIntegral addr
 
 -- | Writes to an IO register
 writeIOReg :: IOAddress -> Word8 -> AVRState -> AVRState
 writeIOReg addr val state = state {ioRegs = ioRegs'}
   where
-    ioRegs' = (ioRegs state) // [(fromIntegral addr, val)]
+    ioRegs' = ioRegs state // [(fromIntegral addr, val)]
 
 -- | Reads a location in SRAM
 readRam :: RamAddress -> AVRState -> Word8
-readRam addr state = ram state ! (fromIntegral addr)
+readRam addr state = ram state ! fromIntegral addr
 
 -- | Writes to a location in SRAM
 writeRam :: RamAddress -> Word8 -> AVRState -> AVRState
@@ -162,28 +163,25 @@ writeRam addr val state = state {ram = ram'}
   where
     ram' = ram state // [(fromIntegral addr, val)]
 
--- | Reads a value from the data memory, which maps the register file, io regs, and SRAM
-readDMem :: Word16 -> AVRState -> Word8
-readDMem addr
-  | addr < 32        = getReg rnum
-  | (addr - 32) < 64 = readIOReg ioAddr
-  | otherwise        = readRam ramAddr
+-- | Helper function for accessing data memory space
+accessDMem :: (RegNum -> a, IOAddress -> a, RamAddress -> a) -> Word16 -> a
+accessDMem (regOp, ioRegOp, ramOp) addr
+  | addr < 32        = regOp rnum
+  | (addr - 32) < 64 = ioRegOp ioAddr
+  | otherwise        = ramOp ramAddr
     where
       rnum = toEnum $ fromIntegral addr
       ioAddr = fromIntegral $ addr - 32
       ramAddr = fromIntegral $ addr - 96
+      
+-- | Reads a value from the data memory, which maps the register file, io regs, and SRAM
+readDMem :: Word16 -> AVRState -> Word8
+readDMem = accessDMem (getReg, readIOReg, readRam)
 
 -- | Writes a value to the reg file, io regs, or ram, depending on the address
 writeDMem :: Word16 -> Word8 -> AVRState -> AVRState
-writeDMem addr
-  | addr < 32         = setReg rnum
-  | (addr -  32) < 64 = writeIOReg ioAddr
-  | otherwise         = writeRam ramAddr
-  where
-    rnum = toEnum $ fromIntegral addr
-    ioAddr = fromIntegral $ addr - 32
-    ramAddr = fromIntegral $ addr - 96
-    
+writeDMem = accessDMem (setReg, writeIOReg, writeRam)
+
 readPMem8 :: Word16 -> AVRState -> Word8
 readPMem8 addr state = if testBit addr 0 then hi else lo
   where
@@ -193,9 +191,7 @@ readPMem8 addr state = if testBit addr 0 then hi else lo
     
 -- | Reads two bytes from program memory
 readPMem16 :: Word16 -> AVRState -> Word16
-readPMem16 addr state = case programMemory state !? fromIntegral addr of
-  Nothing -> 0xFFFF
-  Just v  -> v
+readPMem16 addr state = fromMaybe 0xFFFF (programMemory state !? fromIntegral addr)
     
 ------------------------
 -- STACK MANIPULATION --
@@ -221,7 +217,7 @@ incSP = setSP =<< (+1) . getSP
 
 -- | Decrements the stack pointer by one
 decSP :: AVRState -> AVRState
-decSP = setSP =<< (subtract 1) . getSP
+decSP = setSP =<< subtract 1 . getSP
 
 -- | Pushes a value onto the stack, this also decrements the stack pointer
 stackPush :: Word8 -> AVRState -> AVRState
