@@ -86,4 +86,4 @@ iterateM :: (Monad m) => (a -> m a) -> a -> m a
 iterateM = foldr (>=>) return . repeat
   
 repl :: Vector Word16 -> IO()
-repl pmem = (iterateM loop [initialState pmem]) >> return ()
+repl pmem = void $ iterateM loop [initialState pmem]
