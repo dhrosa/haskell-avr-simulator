@@ -60,9 +60,7 @@ eval (HighExt a) = do
   val <- eval a
   return $ fromIntegral $ 0xFF .&. (val `shiftR` 16)
   
-eval (ZeroExtend n) = do
-  val <- fromIntegral <$> eval n
-  return val
+eval (ZeroExtend n) = fromIntegral <$> eval n
   
 eval (SignExtend n) = do
   val <- eval n

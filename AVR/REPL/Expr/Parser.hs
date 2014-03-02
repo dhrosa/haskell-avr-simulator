@@ -65,10 +65,10 @@ lit16 = do
 
 -- | Parses a register
 reg8 :: Parser (Expr Word8)
-reg8 = regNum >>= (return . Reg)
+reg8 = liftM Reg regNum
 
 ioReg :: Parser (Expr Word8)
-ioReg = choice [string "IO", string "io"] >> decimal >>= (return . IOReg)
+ioReg = choice [string "IO", string "io"] >> liftM IOReg decimal
 
 -- | Parses an 8-bit expression
 expr8 :: Parser (Expr Word8)
